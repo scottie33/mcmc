@@ -1,0 +1,41 @@
+
+reset
+
+load "paraentropy.gpl"
+emin=emin/epsilon
+emax=emax/epsilon
+set term post enh size 8,4.5 color
+set out 'EnerDH.eps'
+coeff=1
+load "temp.gpl"
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel '{/Times-Italic {/Symbol f}}' font ",20"# tc rgb "#0000ff"
+#set encoding default
+set ylabel '{/Times-Italic Energy/{/Symbol e}}'  font ",20"#font "UTF-8,16"# tc rgb "#880000"
+pi=acos(-1)
+xmax=pi*2
+set xrange [0:xmax]
+#oset yrange [smin:smax]
+
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+xinterval=xmax/4
+set xtics xinterval
+
+set mxtics 10
+set mytics 5
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+#set style fill transparent solid 0.1 noborder
+set key top right
+#set key box
+#plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
+#plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
+
+#set title font ",20"
+
+plot for [i=0.0:6.0:1.0] 1+cos(x-i/6.0*pi) w l lt 1 lw 2 lc i title "{/Times-Italic {/Symbol f}=}".i."{/Times-Italic /6 {/Symbol P}}"
+unset multiplot

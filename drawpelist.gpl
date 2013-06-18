@@ -1,0 +1,31 @@
+
+reset
+
+#emin=emin/epsilon
+#emax=emax/epsilon
+set term post enh size 8,4.5 #  color
+set out 'pelist.eps'
+
+load 'paraentropy.gpl'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+#cetitle='{/Times-Italic CE Heat Capacity}'
+#mcetitle='{/Times-Italic MCE Heat Capacity}'
+set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"
+
+set ylabel '{/Times-Italic P(E/{/Symbol e})}' font ",20"
+
+set yrange [0:]
+
+set ytics nomirror 
+
+set xtics nomirror 
+
+set mxtics 5
+set mytics 5
+set key spacing 1.5
+#set key box
+#set key outs
+

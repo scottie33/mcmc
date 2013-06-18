@@ -1,0 +1,35 @@
+ATOM      1  C   CHN A   1      41.584 -10.606  -8.715                          
+ATOM      2  C   CHN A   1      42.506  -5.999  -8.629                          
+ATOM      3  C   CHN A   1      42.395  -2.494  -5.498                          
+ATOM      4  C   CHN A   1      38.046  -0.726  -5.266                          
+ATOM      5  C   CHN A   1      37.147   3.009  -7.973                          
+ATOM      6  C   CHN A   1      37.368   5.347 -12.045                          
+ATOM      7  C   CHN A   1      34.465   5.074 -15.730                          
+ATOM      8  C   CHN A   1      31.694   3.204 -12.427                          
+ATOM      9  C   CHN A   1      32.976   6.632  -9.477                          
+ATOM     10  C   CHN A   1      29.332   9.409 -10.523                          
+ATOM     11  C   CHN A   1      28.004  13.849 -11.305                          
+ATOM     12  C   CHN A   1      23.590  15.444 -11.557                          
+ATOM     13  C   CHN A   1      22.659  16.817  -7.159                          
+ATOM     14  C   CHN A   1      20.186  13.692  -4.668                          
+ATOM     15  C   CHN A   1      16.990  17.129  -4.905                          
+ATOM     16  C   CHN A   1      12.488  17.718  -3.688                          
+ATOM     17  C   CHN A   1      10.021  19.491  -0.102                          
+ATOM     18  C   CHN A   1       6.755  17.940  -3.105                          
+CONECT    1    2
+CONECT    2    3
+CONECT    3    4
+CONECT    4    5
+CONECT    5    6
+CONECT    6    7
+CONECT    7    8
+CONECT    8    9
+CONECT    9   10
+CONECT   10   11
+CONECT   11   12
+CONECT   12   13
+CONECT   13   14
+CONECT   14   15
+CONECT   15   16
+CONECT   16   17
+CONECT   17   18

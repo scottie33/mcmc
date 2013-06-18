@@ -1,0 +1,35 @@
+Instruction: (anything in [] is optional, or say, your decision)
+1, make clean
+   make
+2, _config.in [_ffpara.in]
+   [init].pdb
+   _temperaturelist.pls (use ./makeTlist.py to generate it)
+3, mpirun -np [_NUM_of_replicas] [./mcmc]
+4, do analysis;
+
+------- splitline -------
+scripts for analysis:
+
+calcrg2.bash
+drawacc.bash
+getPE.py
+1, wham
+getOE.py ;# better than getPE.py
+2, getDIS.bash
+3, getCV.bash
+getPE.py
+4, getPElist.bash [newer version, very good and versatile]
+5, getcerg.bash
+   getcedis.bash
+   getceener.bash
+6. getFE.py
+
+pdb2psf.py
+makeTlist.py
+
+test_g.py
+calcdis.py
+getcvfromprob.py
+oldgetPE.py [do not use this any more]
+
+

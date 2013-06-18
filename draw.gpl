@@ -1,0 +1,135 @@
+reset
+#h=4.136e-15 # eV s
+#hbar=6.57e-16 # eV s
+#c=3e17  # nm/s
+load "para4gnuplot.par"
+
+#set size 0.5,0.5
+#fn='A_CIL_A_CIL'
+#set encoding iso_8859_1 #for the use of symbol angstrom
+#font "Times New Roman,宋体,20"
+set term post enh size 8,4.5
+set out fn.'.eps' 
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel '{/Times-Italic Distance ({/Symbol s}_{ij})}' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+#set x2label 'Temperature [K]'
+set ylabel '{/Times-Italic Potential Energy ({/Symbol e}_{ij} in K_{B}T)}' #font "UTF-8,16"# tc rgb "#880000"
+#set y2label 'dE/d{/Symbol l} [meV/nm]' tc rgb "#008800"
+xlow=0.01 
+xhigh=4.0
+set xrange [xlow:xhigh]
+#set x2range [0:10]
+ylow=-1.8
+yhigh=4.8
+set yrange [ylow:yhigh]
+
+
+print " fn=",fn
+print " epsilon=",epsilon," sigma=",sigma," r_c=",cut
+
+wdGBP=1
+
+#xlow=cut>(0.81*sigma)?(0.61*sigma):(0.9*cut)
+#xhigh=cut<(1.71*sigma)?(2.05*sigma):(1.1*cut)
+print " xlow=",xlow," xhigh=", xhigh
+
+cut=cut/sigma
+#ylow=(epsilon!=0)?(-abs(epsilon)*1.5+0.001):-0.001
+#yhigh=(epsilon!=0)?(abs(epsilon)*5.5-0.001):0.001 #0.5*5.5=2.75
+pow(a,b)=(a==0)?0:exp(b*log(a)) #a>=0;sigma>0;r>0;
+well=pow(2,1.0/6.0)
+epsilon_a=epsilon
+epsilon=epsilon/abs(epsilon)
+sigma_a=sigma
+sigma=sigma/sigma
+print " epsilon=",epsilon," sigma=",sigma," r_c=",cut
+f(x)=4*(abs(epsilon)*pow(sigma/x,12)-epsilon*pow(sigma/x,6)) # normal lj
+pc=f(cut)
+print " u^{LJ}(r_c)=",pc
+lj(x)=f(x)-pc # levelled lj
+ljc(x)=x<cut?(f(x)-pc):0 # lj_cut
+
+#set y2range [1:-7]
+#set y2tics 1,-1,-7
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+#set x2tics
+set mxtics 2
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+
+#plot "A_CIL_A_CIL.nrg" u 1:2 w l lw 6 lc rgb "gray";
+#set style fill transparent solid 0.4
+#set style fill solid 0.4 noborder
+#set style fill solid 0.4
+#plot "A_CIL_A_CIL.nrg" u 1:2 w filledcurves x1=0 lw 2 lc rgb "black"; #lc rgb "#880000";#, -1000*h*c/x/x axes x1y2 w l lc rgb "#008800"
+#set palette model RGB defined ( 0 'black', 1 'green' )
+#plot[0:5][0:6] "file.dat" u 1:2:($3==0?0:1) with points palette
+#set key box
+pwell=f(well)
+if(epsilon>0) set arrow 1 from well,ylow to well,pwell nohead lt 6 lw 1 lc rgb "black"; \
+              set label 1 at well+0.1,ylow-0.3*abs(epsilon) "{/Times-Italic 2^{1/6}{/Symbol s}_{ij}}" center font "UTF-8,12";\
+              set arrow 5 from xlow,pwell to well,pwell nohead lt 1 lw 1 lc rgb "gray";\
+              pm_label=(epsilon!=0)?(pwell/epsilon):0;\
+              set label 5 sprintf("{/Times-Italic u^{LJ}_{min}=%3.2f{/Symbol e}_{ij}}",pm_label) at xlow+0.035*sigma,pwell-0.3*abs(epsilon) left font "UTF-8,12"
+
+if(epsilon!=0) set arrow 2 from cut,ylow to cut,pc nohead lt 6 lw 1 lc rgb "black";\
+               set label 2 at cut+0.035*sigma,ylow+0.35*abs(epsilon) sprintf("{/Times-Italic r_{cut;ij}=%3.2f{/Symbol s}_{ij}}",cut) left font "UTF-8,12"
+
+#set object 1 circle at cut,0.0 lw 3 size 0.05 fc rgb "gray" fs transparent #solid 4
+
+#set arrow 2 from xlow,-epsilon to well,-epsilon nohead lt 4 lw 3 lc rgb "black"
+#set label 2 at xlow+0.02,-0.8*epsilon "-{/Symbol e}" center font "Times New Roman,12"
+
+set arrow 3 from xlow,0 to xhigh,0 nohead lt 4 lw 1 lc rgb "black"
+
+if(epsilon!=0) set arrow 4 from xlow,pc to cut,pc nohead lt 1 lw 1 lc rgb "gray";\
+               pc_label=(epsilon!=0)?(pc/epsilon):0;\
+               set label 4 sprintf("{/Times-Italic u^{LJ}(r_{cut;ij})=%3.2f{/Symbol e}_{ij}}",pc_label) at xlow+0.035*sigma,pc+0.3*abs(epsilon) left font "UTF-8,12"
+
+#set label 4 at xlow+0.04,pc-0.2*abs(epsilon) '{E_{cut}}=pc/epsilon{/Symbol e}' center font "Times New Roman,12"
+#0.2*0.5
+#set key font ",8"
+set key spacing 1.5
+
+if (wdGBP!=0) plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 4 lc rgb "gray",\
+                   (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 12 lc rgb "gray",\
+                   fn.'.nrg' u ($1/sigma_a):($2/epsilon_a) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 12 lc rgb "brown",\
+                   (ljc(x/sigma)/epsilon) title "{/Times-Italic u(r_{ij}) GBP}" w l lt 1 lw 4 lc rgb "black";\
+else plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 4 lc rgb "gray",\
+          (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 12 lc rgb "gray",\
+          (ljc(x/sigma)/epsilon) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 4 lc rgb "black";
+
+#set arrow 2 from 547, -0.7 to 547, 3.4 nohead lt 2 lc rgb 'black'
+#set label 1 at 529, 3.5 "A_T" center font "Helvetica,16"
+#set label 2 at 547, 3.5 "A_0" center font "Helvetica,16"
+unset multiplot
+
+#set term post enh size 8,4.5 # enhanced PostScript, essentially PostScript with bounding boxes
+#set multiplot
+#set out 'A_CIL_A_CIL.eps' 
+#replot
+#unset grid
+#set xlabel " "
+#set xtics format " "
+#set x2tics format " "
+#set x2label " "
+#set ylabel " "
+#set y2label " "
+#set grid x2tics lt 0 lw 1 lc rgb "#000000"
+#plot 1/0
+
+#unset grid
+#set grid ytics lt 0 lw 1 lc rgb "#880000"
+#plot 1/0
+
+#unset grid
+#set grid y2tics lt 0 lw 1 lc rgb "#008800"
+#plot 1/0
+
+

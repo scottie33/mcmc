@@ -1,0 +1,45 @@
+reset
+#h=4.136e-15 # eV s
+#hbar=6.57e-16 # eV s
+#c=3e17  # nm/s
+
+set multiplot
+unset key
+set xlabel 'distance[A]' tc rgb "#0000ff"
+#set x2label 'Temperature [K]'
+set ylabel 'Energy[KBT]' tc rgb "#880000"
+#set y2label 'dE/d{/Symbol l} [meV/nm]' tc rgb "#008800"
+set xrange [0:100]
+#set x2range [0:10]
+set yrange [-2.5:5]
+#set y2range [1:-7]
+#set y2tics 1,-1,-7
+set ytics nomirror tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set xtics nomirror tc rgb "#0000ff"
+#set x2tics
+set mxtics 2
+set mytics 2
+set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+
+plot h*c/x w l lc rgb "#880000"#, -1000*h*c/x/x axes x1y2 w l lc rgb "#008800"
+
+unset grid
+set xlabel " "
+set xtics format " "
+#set x2tics format " "
+#set x2label " "
+set ylabel " "
+#set y2label " "
+#set grid x2tics lt 0 lw 1 lc rgb "#000000"
+plot 1/0
+
+unset grid
+set grid ytics lt 0 lw 1 lc rgb "#880000"
+plot 1/0
+
+#unset grid
+#set grid y2tics lt 0 lw 1 lc rgb "#008800"
+#plot 1/0
+
+unset multiplot

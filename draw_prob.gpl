@@ -1,0 +1,36 @@
+
+reset
+
+load "ensembler.gpl"
+nrep=nrep+1
+set term post enh size 8,4.5 color
+set out 'probability.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel 'Energy [K_{B}T]' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel 'P(E)' #font "UTF-8,16"# tc rgb "#880000"
+set xrange [emin:emax]
+
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+xinterval=(emax-emin)/10
+set xtics xinterval
+
+set mxtics 10
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+set style fill transparent solid 0.1 noborder
+#set key outside
+#plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
+#plot "probability_all.dat" u 1:2 w filledcurves title "sum", \
+
+plot "probability_all.dat" u 1:2 w l lt 1 lw 4 lc rgb "gray" title "sum", \
+     for [i=2:nrep:1] "probability_each.dat" u 1:i w l lt 1 lw 1 lc i title "T".(i-1)
+
+unset multiplot
+
+

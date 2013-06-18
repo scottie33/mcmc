@@ -1,0 +1,61 @@
+
+reset
+
+
+dtflname='data_log.lst'
+
+set term post enh size 8,4.5
+set out 'showbootstrap.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel 'N: the bootstrap gap' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel 'Error: Deviation from Expectation' #font "UTF-8,16"# tc rgb "#880000"
+#set xrange [xlow:xhigh]
+#set yrange [ylow:yhigh]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+#set xtics ("" log(4), "log(8)" log(8), "log(16)" log(16), "log(32)" log(32), "log(64)" log(64), "log(128)" log(128), "" log(256))
+#set mxtics 5
+#set mytics 2
+#set logscale xy
+#set key spacing 1.5
+#set key outside
+#print a
+#temptitle=sprintf("fitted line with a=%f",a)
+
+set y2label "N_{eff}=N/g"
+set y2tics
+#set key left
+#xmid=(xhigh+xlow)/3.0
+#ymid=g(xmid)+0.3
+#set arrow 1 from xlow,ylow to xhigh,yhigh nohead lt 4 lw 1 lc rgb "black"
+#set label 1 at xmid,ymid "k=0.5" center font "UTF-8,15"
+#plot f(x) t temptitle w l lt 1 lw 1 lc rgb "black", \
+
+set key center top
+set key box
+plot dtflname u 8:11 axes x1y1 t "" w l lt 1 lw 4 lc rgb "gray", \
+     dtflname u 8:11 axes x1y1 t "Deviation of Mean" w p pt 5,\
+     dtflname u 8:12 axes x1y2 t "" w l lt 2 lw 4 lc rgb "gray", \
+     dtflname u 8:12 axes x1y2 t "N_{eff}" w p pt 9 
+
+#set xlabel 'N'
+#set ylabel 'R'
+#unset xlabel
+#unset ylabel
+#set origin 0.2,0.4
+#set size 0.4,0.4
+#set xrange [exp(xlow):exp(xhigh)]
+#yshift=1
+#set yrange [exp(ylow)+yshift:exp(yhigh)+yshift]
+#plot dtflname u 1:2 t "" w l lt 1 lw 4 lc rgb "black", \
+#     dtflname u 1:2:3:4 t "" with errorbars, \
+#     dtflname u 1:2 t "" w p pt 5
+
+unset multiplot
+
+
+

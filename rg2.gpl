@@ -1,0 +1,37 @@
+reset
+load 'rg2.par'
+
+swth=0.5
+tlwth=3
+fndat=fn.'.dat'
+set term post enh size 8,4.5
+set out fn.'.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel 'Monte Carlo Step' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel 'Squred Radius of Gyration [ (0.1nm)^2 ]' #font "UTF-8,16"# tc rgb "#880000"
+set xrange [xlow:xhigh]
+#set yrange [ylow:yhigh]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+set mxtics 2
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+#unset key
+#set key box
+set key spacing 1.5
+set key outside
+plot fndat u 1 title "" w l lt 2 lw swth lc rgb "#FFD2D2",\
+     fndat u 2 title "" w l lt 2 lw swth lc rgb "#C4E1FF",\
+     fndat u 3 title "" w l lt 2 lw swth lc rgb "#A6FFA6",\
+     fndat u ($1+$2+$3) title "" w l lt 2 lw swth lc rgb "gray",\
+     fndat u 1 smooth bezier title "R^{2}_{G,x}" w l lt 1 lw tlwth lc rgb "#FF2D2D",\
+     fndat u 2 smooth bezier title "R^{2}_{G,y}" w l lt 1 lw tlwth lc rgb "#2894FF",\
+     fndat u 3 smooth bezier title "R^{2}_{G,z}" w l lt 1 lw tlwth lc rgb "#00A600",\
+     fndat u ($1+$2+$3) smooth bezier title "R^{2}_{G}" w l lt 1 lw tlwth lc rgb "black"
+
+
+unset multiplot

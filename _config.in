@@ -1,0 +1,57 @@
+*************************************************************************************
+*************************************************************************************
+****  these are the parameters that will be loaded at the beginning of the run;  ****
+****  check them in " _parameters.bak.pls " to see em'been loaded right or not.  ****
+*************************************************************************************
+*************************************************************************************
+
+_IFVERBOSE            true              //verbose or not;     
+	
+_FILENAME_conf        pnc.pdb       //if 'f': file name of initial conformation
+_RESTARTFlag          true 
+
+_ENSEMBLE_AVERAGE     true              //ensemble out or not when ro==1, will slow down as 'true';
+_FLAG_rg2             true              //calculate the dis of rg2 or not;
+_FLAG_ener            true              //calculate the dis of ener or not;
+_LINDEMANN_INDEX      false              //stat LINDEMANN INDEX or not;
+_OPlist  18 18                         
+// group appears as list [head:tail], e.g.: 1 64 65 65 means 
+// group1: 1-64
+// group2: 65
+// please be awared: no comments this line, this line is pure arguments for PAMCS.
+
+
+_CoorX1               -50            //BOUNDARY of BOX - Xmin;
+_CoorX2               50              //BOUNDARY of BOX - Xmax;
+_CoorY1               -50            //BOUNDARY of BOX - Ymin;
+_CoorY2               50              //BOUNDARY of BOX - Ymax;
+_CoorZ1               -50            //BOUNDARY of BOX - Zmin; testing: -20          when _WALL_effect=true
+_CoorZ2               50              //BOUNDARY of BOX - Zmax; testing: 4*CHN_LEN-20 when _WALL_effect=true
+_PBC_Dim              1                  //dimention of Periodic Boundary Condition;
+
+_Box -2.5
+_Block  1.0
+
+Q1                    0.00
+Q2                    -0.00
+
+_BF_flag              false              //with bond fluctuation or not;
+_AG_flag              true              //with angle calculation or not;
+_DH_flag              true              //with dihedral calculation or not;
+_FFPARA_FN            _ffpara.pls       //read _epsilon info from this file ...
+_NEIGHBOR_lj          1                  //apart from how many atoms we begin calculation of potential;
+                                         //for example if _BF_flag == false, you can numerate it 1;
+_NUM_replicas         32
+_E_lowest             -5
+_E_interval           0.03
+_E_totalnum           5000
+
+
+
+_RUNTIMES_eachstep    100           //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
+_RUNTIMES_totalnum    1000              //how many steps on each replica; the following para are based on this.
+_RUNTIMES_recording   0                //
+_RUNTIMES_remgap      25               //one rem per remgap*natoms mcs
+_RUNTIMES_output      50             //how many times output > remgap
+
+

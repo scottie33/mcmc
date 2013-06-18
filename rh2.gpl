@@ -1,0 +1,26 @@
+reset
+load 'rh2.par'
+
+set term post enh size 8,4.5
+set out fn.'.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel 'Monte Carlo Step' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel 'Squred End-End Dis [ (0.1nm)^2 ]' #font "UTF-8,16"# tc rgb "#880000"
+set xrange [xlow:xhigh]
+#set yrange [ylow:yhigh]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+set mxtics 2
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+unset key
+plot fn.'.dat' u 1 w l lt 1 lw 6 lc rgb "gray"
+#set key box
+set key spacing 1.5
+plot fn.'.dat' u 1 smooth bezier title "R^{2}_{H}" w l lt 1 lw 2 lc rgb "black"
+
+unset multiplot

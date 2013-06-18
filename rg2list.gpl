@@ -1,0 +1,131 @@
+reset
+
+load "tempfn.gpl"
+#sigma=1
+sigma2=sigma*sigma
+
+dtflname=fn.'.lst'
+print " now reading data from [ ".dtflname." ]"
+f(x)=a*x+b
+fit f(x) dtflname u (log($1)):(log($2/sigma2)) via a,b
+g(x)=x+b
+xlow=log(2)
+xhigh=log(256)
+ylow=f(xlow)
+yhigh=f(xhigh)
+
+set term post enh size 8,4.5
+set out fn.'.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel '{/Times-Italic log(N) (N: the length of the polymer chain)}' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel '{/Times-Italic log('.yname.')}' #font "UTF-8,16"# tc rgb "#880000"
+set xrange [xlow:xhigh]
+set yrange [ylow:yhigh]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+set xtics ("" log(2), "{/Times-Italic log(4)}" log(4), "{/Times-Italic log(8)}" log(8), "{/Times-Italic log(16)}" log(16), "{/Times-Italic log(32)}" log(32), "{/Times-Italic log(64)}" log(64), "{/Times-Italic log(128)}" log(128), "" log(256))
+#set mxtics 5
+#set mytics 2
+#set logscale xy
+#set key spacing 1.5
+#set key outside
+#print a
+temptitle=sprintf("fitted line with a=%f",a)
+
+#set key left
+xmid=(xhigh+xlow)/2
+ymid=g(xmid)+0.2
+set arrow 1 from xlow,f(xlow) to xhigh,f(xhigh) nohead lt 4 lw 1 lc rgb "black"
+ka=sprintf("{/Times-Italic {/Symbol n}=%f}",a)
+set label 1 at xmid,ymid ka center font "UTF-8,15"
+#plot f(x) t temptitle w l lt 1 lw 1 lc rgb "black", \
+
+myN=64
+mylogN=log(myN)
+myRG=f(mylogN)
+okayprint=sprintf(" the rg of %d is %f",myN,sqrt(exp(myRG))*sigma)
+print okayprint
+plot dtflname u (log($1)):(log($6/sigma2)) t "" w l lt 1 lw 4 lc rgb "black", \
+     dtflname u (log($1)):(log($6/sigma2)) t "" w p pt 5
+    
+     #dtflname u (log($1)):(log($6)):11 t "" with errorbars, \
+    
+#set xlabel 'N'
+#set ylabel 'R'
+#unset xlabel
+#unset ylabel
+#set origin 0.2,0.4
+#set size 0.4,0.4
+#set xrange [exp(xlow):exp(xhigh)]
+#yshift=1
+#set yrange [exp(ylow)+yshift:exp(yhigh)+yshift]
+#plot dtflname u 1:2 t "" w l lt 1 lw 4 lc rgb "black", \
+#     dtflname u 1:2:3:4 t "" with errorbars, \
+#     dtflname u 1:2 t "" w p pt 5
+
+unset multiplot
+
+reset
+
+load "tempfn.gpl"
+
+dtflname=fn.'.lst'
+g(x)=0.5*x+b
+#xlow=4
+#xhigh=256
+#set offsets graph <left>, <right>, <top>, <bottom>
+#set offsets graph 0,0,2,5
+set term post enh size 8,6
+set out fn.'_og.eps'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel 'N: the number of atoms' #font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel yname #font "UTF-8,16"# tc rgb "#880000"
+#set xrange [xlow:xhigh]
+#set yrange [ylow:yhigh]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+#set xtics ("" log(4), "log(8)" log(8), "log(16)" log(16), "log(32)" log(32), "log(64)" log(64), "log(128)" log(128), "" log(256))
+#set mxtics 5
+#set mytics 2
+#set logscale xy
+#set key spacing 1.5
+#set key outside
+#print a
+temptitle=sprintf("fitted line with a=%f",a)
+
+#set key left
+#xmid=(xhigh+xlow)/3.0
+#ymid=g(xmid)+0.3
+#set arrow 1 from xlow,ylow to xhigh,yhigh nohead lt 4 lw 1 lc rgb "black"
+#set label 1 at xmid,ymid "k=0.5" center font "UTF-8,15"
+#plot f(x) t temptitle w l lt 1 lw 1 lc rgb "black", \
+
+plot dtflname u 1:2 t "" w l lt 1 lw 4 lc rgb "black", \
+     dtflname u 1:2:11 t "" with errorbars, \
+     dtflname u 1:2 t "" w p pt 5
+
+#set xlabel 'N'
+#set ylabel 'R'
+#unset xlabel
+#unset ylabel
+#set origin 0.2,0.4
+#set size 0.4,0.4
+#set xrange [exp(xlow):exp(xhigh)]
+#yshift=1
+#set yrange [exp(ylow)+yshift:exp(yhigh)+yshift]
+#plot dtflname u 1:2 t "" w l lt 1 lw 4 lc rgb "black", \
+#     dtflname u 1:2:3:4 t "" with errorbars, \
+#     dtflname u 1:2 t "" w p pt 5
+
+unset multiplot
+
+
+

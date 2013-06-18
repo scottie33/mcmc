@@ -1,0 +1,39 @@
+_IFVERBOSE           1                   
+_FILENAME_conf       pnc.pdb             
+_CoorX1              -50                 
+_CoorX2              50                  
+_CoorY1              -50                 
+_CoorY2              50                  
+_CoorZ1              -50                 
+_CoorZ2              50                  
+_PBC_Dim             1                   
+_PBL_X               100                 
+_PBL_Y               100                 
+_PBL_Z               100                 
+_PBL_X_2             50                  
+_PBL_Y_2             50                  
+_PBL_Z_2             50                  
+_BF_flag             0                   
+_AG_flag             1                   
+_DH_flag             1                   
+_NUM_atoms           18                  
+_NUM_residues        1                   
+_NUM_chains          1                   
+_FFPARA_FN           _ffpara.pls         
+_NEIGHBOR_lj         1                   
+_FLAG_ener           1                   
+_FLAG_rg2            1                   
+ _OPlist 18 18 
+ Group[  1] : 18-18
+ GroupPair[  1] : G1-G1
+_NUM_replicas        32                  
+_RUNTIMES_eachstep   1800                
+_RUNTIMES_totalnum   1000                
+_RUNTIMES_recording  0                   
+_RESTARTFlag         0                   
+_RUNTIMES_output     50                  
+_RUNTIMES_remgap     25                  
+_E_lowest            -5                  
+_E_interval          0.03                
+_E_highest           145                 
+_E_totalnum          5000                

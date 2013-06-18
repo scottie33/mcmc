@@ -1,0 +1,56 @@
+
+reset
+
+#emin=emin/epsilon
+#emax=emax/epsilon
+set term post enh size 8,4.5 color
+set out 'fe.eps'
+
+load 'paraentropy.gpl'
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+#etitle='{/Times-Italic CE Heat Capacity}'
+ftitle='{/Times-Italic Helmholtz Free Energy}'
+stitle='{/Times-Italic CE Entropy}'
+#Emcetitle='{/Times-Italic MCE Energy}'
+set xlabel '{/Times-Italic log(T_{CE}/{/Symbol e})}' font ",20"# tc rgb "#0000ff"
+#set encoding default
+set ylabel '{/Times-Italic Helmholtz Free Energy}' font ",20"# tc rgb "#880000"
+set y2label '{/Times-Italic CE Entropy}' font ",20" rotate by -90# tc rgb "#880000"
+load 'range.gpl'
+#set xrange [0.01:5.0]
+#smax=(smax-smin)*1.1+smin
+#set yrange [0:]
+#set y2range [:]
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+set y2tics nomirror
+#set y2tics tc rgb "#008800"
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+#xinterval=(emax-emin)/5
+#set xtics xinterval
+
+set mxtics 10
+set mytics 5
+set my2tics 5
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+#set style fill transparent solid 0.1 noborder
+set key left top
+#set key box
+#plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
+#plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
+
+set logscale x
+
+plot "HFE.dat" u ($1/epsilon):($3/epsilon) w l lt 1 lw 2 lc rgb "red" title ftitle,\
+"HFE.dat" u ($1/epsilon):4 axis x1y2 w l lt 2 lw 2 lc rgb "blue" title stitle
+
+#plot "CECV.dat" u ($1/epsilon):($2/epsilon) axis x1y2 w p pt 1 ps 2 lc rgb "black" title Ecetitle,\
+#"MCEE.dat" u ($1/epsilon):($2/epsilon) axis x1y2 w l lt 2 lw 2 lc rgb "black" title Emcetitle,\
+#"CECV.dat" u ($1/epsilon):($3/epsilon/epsilon) w p pt 6 ps 2 lc rgb "black" title cetitle,\
+#"MCECV.dat" u ($1/epsilon):($2/epsilon/epsilon) w l lt 1 lw 2 lc rgb "black" title mcetitle
+
+unset multiplot
+
+

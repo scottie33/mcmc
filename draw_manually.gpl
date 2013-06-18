@@ -1,0 +1,95 @@
+reset
+#h=4.136e-15 # eV s
+#hbar=6.57e-16 # eV s
+#c=3e17  # nm/s
+
+fn='A_ROD_A_CIL'
+epsilon=-0.5
+sigma=1
+cut=1.12246
+
+xlow=0.0
+xhigh=1.99
+ylow=-abs(epsilon)*5.5+0.01
+yhigh=abs(epsilon)*5.5-0.001 #0.5*5.5=2.75
+pow(a,b)=exp(b*log(a))
+well=pow(2,1.0/6.0)*sigma
+f(x)=4*(abs(epsilon)*pow(sigma/x,12)-epsilon*pow(sigma/x,6)) # normal lj
+lj(x)=f(x)-f(cut) # levelled lj
+ljc(x)=x<cut?f(x):(f(x)-f(cut)) # lj_cut
+#set size 0.5,0.5
+#fn='A_CIL_A_CIL'
+#set encoding iso_8859_1 #for the use of symbol angstrom
+#font "Times New Roman,宋体,20"
+set term post enh size 8,4.5
+set out fn.'.eps' 
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+unset key
+set xlabel 'Distance[0.1nm]' font "Times New Roman,16"# tc rgb "#0000ff"
+#set encoding default
+#set x2label 'Temperature [K]'
+set ylabel 'Energy[K_{B}T]' font "Times New Roman,16"# tc rgb "#880000"
+#set y2label 'dE/d{/Symbol l} [meV/nm]' tc rgb "#008800"
+set xrange [xlow:xhigh]
+#set x2range [0:10]
+set yrange [ylow:yhigh]
+#set y2range [1:-7]
+#set y2tics 1,-1,-7
+set ytics nomirror #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set xtics nomirror #tc rgb "#0000ff"
+#set x2tics
+set mxtics 2
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+
+#plot "A_CIL_A_CIL.nrg" u 1:2 w l lw 6 lc rgb "gray";
+#set style fill transparent solid 0.4
+#set style fill solid 0.4 noborder
+#set style fill solid 0.4
+#plot "A_CIL_A_CIL.nrg" u 1:2 w filledcurves x1=0 lw 2 lc rgb "black"; #lc rgb "#880000";#, -1000*h*c/x/x axes x1y2 w l lc rgb "#008800"
+#set palette model RGB defined ( 0 'black', 1 'green' )
+#plot[0:5][0:6] "file.dat" u 1:2:($3==0?0:1) with points palette
+set key box
+set arrow 1 from well,ylow to well,yhigh nohead lt 4 lw 1 lc rgb "black"
+set label 1 at well+0.08,ylow+0.35*epsilon "R_{cut}=2^{1/6}{/Symbol s}" center font "Times New Roman,10"
+
+set arrow 2 from xlow,-epsilon to well,-epsilon nohead lt 4 lw 1 lc rgb "black"
+set label 2 at xlow+0.0175,-0.8*epsilon "{/Symbol e}" center font "Times New Roman,12"
+
+set arrow 3 from xlow,0 to xhigh,0 nohead lt 4 lw 1 lc rgb "black"
+#set label 3 at xlow+0.0175,0.1-epsilon "{/Symbol e}" center font "Times New Roman,12"
+
+plot (f(x)) title "Lenard-Jones Potential" w l lt 2 lw 4 lc rgb "gray",\
+     (lj(x)) title "L-J Potential + {/Symbol e}" w l lt 1 lw 10 lc rgb "gray",\
+     fn.'.nrg' u 1:2 title "L-J Potential cut + {/Symbol e}" w l lt 1 lw 3 lc rgb "black"
+
+#set arrow 2 from 547, -0.7 to 547, 3.4 nohead lt 2 lc rgb 'black'
+#set label 1 at 529, 3.5 "A_T" center font "Helvetica,16"
+#set label 2 at 547, 3.5 "A_0" center font "Helvetica,16"
+unset multiplot
+
+#set term post enh size 8,4.5 # enhanced PostScript, essentially PostScript with bounding boxes
+#set multiplot
+#set out 'A_CIL_A_CIL.eps' 
+#replot
+#unset grid
+#set xlabel " "
+#set xtics format " "
+#set x2tics format " "
+#set x2label " "
+#set ylabel " "
+#set y2label " "
+#set grid x2tics lt 0 lw 1 lc rgb "#000000"
+#plot 1/0
+
+#unset grid
+#set grid ytics lt 0 lw 1 lc rgb "#880000"
+#plot 1/0
+
+#unset grid
+#set grid y2tics lt 0 lw 1 lc rgb "#008800"
+#plot 1/0
+
+

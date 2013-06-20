@@ -9,7 +9,7 @@ def log_cc(log_aa, log_bb): #cc=aa+bb; give log_aa, log_bb, return log_cc;
 	else:
 		return log_bb+log(1+exp(log_aa-log_bb))
 
-if len(sys.argv) < 3: 
+if len(sys.argv) < 4: 
 	print " Syntax: getFE.py lowtemp hightemp nTbins" # [shift]"
 	print " e.g.: getFE.py 0.01 10.0 100" # [shift]"
   	exit(-1)

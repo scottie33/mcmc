@@ -65,4 +65,11 @@ for eafi in `ls EnerAG*.dat`; do
 	echo " file: [ ${eafi}.eps ] created. ;-)"
 done
 
+for eafi in `ls EnerDH*.dat`; do
+	cp $eafi tempEnerDH.dat
+	gnuplot < draw_EDH.gpl
+	mv tempEnerDH.eps ${eafi}.eps
+	echo " file: [ ${eafi}.eps ] created. ;-)"
+done
+
 exit 0

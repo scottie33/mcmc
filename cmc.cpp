@@ -114,6 +114,11 @@ cmc::cmc() {
 	_E_interval=0.0;  //        0.04
 	_E_highest=0.0;
 	_E_totalnum=0.0;  //        5000
+	
+	_RG_lowest=0.0;    //       -20
+	_RG_interval=0.0;  //        0.04
+	_RG_highest=0.0;
+	_RG_totalnum=0.0;  //        5000
 
 	_RUNTIMES_remgap=0;
 	//_MPI_OR_NOT=false;
@@ -226,9 +231,9 @@ void cmc::memo_allocation() {
 	_COM_x_stat.Build(_NUM_chains, _E_totalnum);
 	_COM_y_stat.Build(_NUM_chains, _E_totalnum);
 	_COM_z_stat.Build(_NUM_chains, _E_totalnum);
-	_RG2_x_stat.Build(_NUM_chains, _E_totalnum);
-	_RG2_y_stat.Build(_NUM_chains, _E_totalnum);
-	_RG2_z_stat.Build(_NUM_chains, _E_totalnum);
+	_RG2_x_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_RG2_y_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_RG2_z_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	_ENERLJ_stat.Build(_NUM_chains*_NUM_chains, _E_totalnum);
 	_ENERBF_stat.Build(_NUM_chains, _E_totalnum);
 	_ENERAG_stat.Build(_NUM_chains, _E_totalnum);
@@ -240,9 +245,9 @@ void cmc::memo_allocation() {
 	_COM_x_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_COM_y_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_COM_z_stat_tot.Build(_NUM_chains, _E_totalnum);
-	_RG2_x_stat_tot.Build(_NUM_chains, _E_totalnum);
-	_RG2_y_stat_tot.Build(_NUM_chains, _E_totalnum);
-	_RG2_z_stat_tot.Build(_NUM_chains, _E_totalnum);
+	_RG2_x_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_RG2_y_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_RG2_z_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	
 	//_ENERAB_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum);
 	_ENER_delta_LJ_inter=new double[_NUM_chains];
@@ -999,6 +1004,9 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_E_lowest"), _E_lowest);
 			readparameter(tempstr, string("_E_interval"), _E_interval);
 			readparameter(tempstr, string("_E_totalnum"), _E_totalnum);
+			readparameter(tempstr, string("_RG_lowest"), _RG_lowest);
+			readparameter(tempstr, string("_RG_interval"), _RG_interval);
+			readparameter(tempstr, string("_RG_totalnum"), _RG_totalnum);
 			//readparameter(tempstr, string("_MPI_OR_NOT"), _MPI_OR_NOT);
 		}
 		if( tempvec[0] == string("_OPlist") ) {
@@ -1066,6 +1074,7 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 		cout<<setw(30)<<" ::_DH_flag: "<<_DH_flag<<endl;
 	}
 	_E_highest=_E_lowest+_E_interval*_E_totalnum;
+	_RG_highest=_RG_lowest+_RG_interval*_RG_totalnum;
 	if(_IFVERBOSE) {
 
 		cout<<setw(30)<<" ::_FFPARA_FN: "<<_FFPARA_FN<<endl;
@@ -1085,6 +1094,10 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 		cout<<setw(30)<<" ::_E_interval: "<<_E_interval<<endl;
 		cout<<setw(30)<<" ::_E_highest: "<<_E_highest<<endl;
 		cout<<setw(30)<<" ::_E_totalnum: "<<_E_totalnum<<endl;
+		cout<<setw(30)<<" ::_RG_lowest: "<<_RG_lowest<<endl;
+		cout<<setw(30)<<" ::_RG_interval: "<<_RG_interval<<endl;
+		cout<<setw(30)<<" ::_RG_highest: "<<_RG_highest<<endl;
+		cout<<setw(30)<<" ::_RG_totalnum: "<<_RG_totalnum<<endl;
 
 		cout<<resetiosflags(ios::left);
 	}
@@ -1190,6 +1203,11 @@ void cmc::write_parameters(const string FILENAME_para) {
 	writeparameter(para_ofstream, string("_E_interval"), _E_interval);
 	writeparameter(para_ofstream, string("_E_highest"), _E_highest);
 	writeparameter(para_ofstream, string("_E_totalnum"), _E_totalnum);
+	
+	writeparameter(para_ofstream, string("_RG_lowest"), _RG_lowest);
+	writeparameter(para_ofstream, string("_RG_interval"), _RG_interval);
+	writeparameter(para_ofstream, string("_RG_highest"), _RG_highest);
+	writeparameter(para_ofstream, string("_RG_totalnum"), _RG_totalnum);
 
 	cout<<resetiosflags(ios::left);
 	para_ofstream.close();
@@ -1269,7 +1287,12 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_E_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_E_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_E_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&_E_totalnum, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_E_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	
+	MPI_Bcast(&_RG_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_RG_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_RG_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_RG_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	//MPI_Bcast(&_MPI_OR_NOT, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	/*if(_PROC_ID!=0) {
 		cout<<setiosflags(ios::left);
@@ -3884,7 +3907,7 @@ void cmc::init_statistic() {
 }
 ////////////////
 inline void cmc::statistic() { //every step!!
-	//int i=0;
+	int i=0;
 	//int j=0;	
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 		stat_size=_SIZE_of_chn[stat_i];
@@ -3946,9 +3969,31 @@ inline void cmc::statistic() { //every step!!
 			_COM_x_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_X(stat_com_x[stat_i]);
 			_COM_y_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_Y(stat_com_y[stat_i]);
 			_COM_z_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_Z(stat_com_z[stat_i]);
-			_RG2_x_stat.pArray[stat_i][tempindex_judge]+=_RG2_x[stat_i];
-			_RG2_y_stat.pArray[stat_i][tempindex_judge]+=_RG2_y[stat_i];
-			_RG2_z_stat.pArray[stat_i][tempindex_judge]+=_RG2_z[stat_i];
+			
+			i=int((_RG2_x[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+			if(i>=_RG_totalnum) {
+				_RG2_x_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+			} else if (i<0) {
+				_RG2_x_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+			} else {
+				_RG2_x_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+			}
+			i=int((_RG2_y[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+			if(i>=_RG_totalnum) {
+				_RG2_y_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+			} else if (i<0) {
+				_RG2_y_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+			} else {
+				_RG2_y_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+			}
+			i=int((_RG2_z[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+			if(i>=_RG_totalnum) {
+				_RG2_z_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+			} else if (i<0) {
+				_RG2_z_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+			} else {
+				_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+			}
 			//if(_COM_x_stat.pArray[stat_i][tempindex_judge]>1e-6) cout<<stat_i<<" "<<_COM_x_stat.pArray[stat_i][tempindex_judge]<<" "<<_RG2_x_stat.pArray[stat_i][tempindex_judge]<<endl;
 		}
 	} 
@@ -3979,9 +4024,9 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	MPI_Reduce(_COM_x_stat.pArray[0], _COM_x_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_y_stat.pArray[0], _COM_y_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_z_stat.pArray[0], _COM_z_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_x_stat.pArray[0], _RG2_x_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_y_stat.pArray[0], _RG2_y_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_z_stat.pArray[0], _RG2_z_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_x_stat.pArray[0][0], _RG2_x_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
 	if(_PROC_ID!=0) {
 		return;
@@ -3996,12 +4041,25 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	ofstream* temposEDH;
 	ofstream* temposCOM;
 	ofstream* temposRG2;
+	//ofstream* temposRG2_plot;
+	ofstream* temposRG2_x_plot;
+	ofstream* temposRG2_y_plot;
+	ofstream* temposRG2_z_plot;
 	temposELJ=new ofstream[_NUM_chains*_NUM_chains];
 	temposEBF=new ofstream[_NUM_chains];
 	temposEAG=new ofstream[_NUM_chains];
 	temposEDH=new ofstream[_NUM_chains];
 	temposCOM=new ofstream[_NUM_chains];
 	temposRG2=new ofstream[_NUM_chains];
+	temposRG2_x_plot=new ofstream[_NUM_chains];
+	temposRG2_y_plot=new ofstream[_NUM_chains];
+	temposRG2_z_plot=new ofstream[_NUM_chains];
+	int tempNum_x=0;
+	int tempNum_y=0;
+	int tempNum_z=0;
+	double tempSum_x=0.0;
+	double tempSum_y=0.0;
+	double tempSum_z=0.0;
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 		stat_size=_SIZE_of_chn[stat_i];
 		cout<<" now writing chn: "<<stat_i+1<<" sz: "<<stat_size<<endl;
@@ -4114,20 +4172,86 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			sprintf(tempfilename, "RG2%03d.dat", stat_i+1);
 			temposRG2[stat_i].open(tempfilename);
 			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+
+			sprintf(tempfilename, "rg2%03d_xplot.dat", stat_i+1);
+			temposRG2_x_plot[stat_i].open(tempfilename);
+			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+
+			sprintf(tempfilename, "rg2%03d_yplot.dat", stat_i+1);
+			temposRG2_y_plot[stat_i].open(tempfilename);
+			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+
+			sprintf(tempfilename, "rg2%03d_zplot.dat", stat_i+1);
+			temposRG2_z_plot[stat_i].open(tempfilename);
+			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+
 			for(stat_k=0; stat_k<_E_totalnum; stat_k++) {
+				tempSum_x=0.0;
+				tempSum_y=0.0;
+				tempSum_z=0.0;
+				for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
+					tempNum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j];
+					tempNum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j];
+					tempNum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j];
+					tempSum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+					tempSum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+					tempSum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+				}
+				
+				if( fabs(_Probability_all[stat_k])-tempNum_x>1e-12 ||
+					tempNum_x!=tempNum_y || tempNum_x!=tempNum_z || tempNum_y!=tempNum_z ) {
+					cout<<" something wrong: trgx="<<tempNum_x<<" trgy="<<tempNum_y<<" trgz="<<tempNum_z
+						<<" _Probability_all[stat_k]="<<_Probability_all[stat_k]<<endl;
+					exit(LOGICERROR);
+				}
 				if(_Probability_all[stat_k]<1e-6) {
 					temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-				                  <<setw(8)<<0.0<<" "
-				                  <<setw(8)<<0.0<<" "
-				                  <<setw(8)<<0.0<<endl;
-	             } else {
-	             	temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-				                 <<setw(10)<<_RG2_x_stat_tot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<" "
-				                 <<setw(10)<<_RG2_y_stat_tot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<" "
-				                 <<setw(10)<<_RG2_z_stat_tot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<endl;	
-	             }
+					              <<setw(8)<<0.0<<" "
+					              <<setw(8)<<0.0<<" "
+					              <<setw(8)<<0.0<<endl;
+				} else {
+					temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+				             <<setw(10)<<tempSum_x/stat_size/_Probability_all[stat_k]<<" "
+				             <<setw(10)<<tempSum_y/stat_size/_Probability_all[stat_k]<<" "
+				             <<setw(10)<<tempSum_z/stat_size/_Probability_all[stat_k]<<endl;	
+				}
+				for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
+					if( fabs(tempNum_x)>1e-6 ) {
+						temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<double(_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_x)<<endl;
+					} else {
+						temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<0.0<<endl;
+				   	}
+				   	if( fabs(tempNum_y)>1e-6 ) {
+					   	temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<double(_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_y)<<endl;
+					} else {
+					    temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<0.0<<endl;
+					}
+					if( fabs(tempNum_z)>1e-6 ) {
+					   	temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<double(_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_z)<<endl;
+					} else {
+					    temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+					                  <<setw(8)<<0.0<<endl;
+					}
+				}
+				temposRG2_x_plot[stat_i]<<" "<<endl;
+				temposRG2_y_plot[stat_i]<<" "<<endl;
+				temposRG2_z_plot[stat_i]<<" "<<endl;
 			}
 			temposRG2[stat_i].close();
+			temposRG2_x_plot[stat_i].close();
+			temposRG2_y_plot[stat_i].close();
+			temposRG2_z_plot[stat_i].close();
 		}
 	}
 	delete[] temposCOM;
@@ -4136,6 +4260,24 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	delete[] temposEBF;
 	delete[] temposEDH;
 	delete[] temposRG2; 
+	delete[] temposRG2_x_plot; 
+	delete[] temposRG2_y_plot; 
+	delete[] temposRG2_z_plot; 
+	//string tempstr;
+	char aptempa[100];
+	char aptempb[100];
+	sprintf(aptempa, "echo \"xmin=%f\" > range.gpl", _E_lowest);
+	sprintf(aptempb, "echo \"xmax=%f\" >> range.gpl", _E_highest);
+	//tempstr="echo \"set xrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" > range.gpl";
+	system(aptempa);
+	system(aptempb);
+	
+	system("cp range.gpl rg2maprange.gpl");
+	sprintf(aptempa, "echo \"ymin=%f\" >> rg2maprange.gpl", _RG_lowest);
+	sprintf(aptempb, "echo \"ymax=%f\" >> rg2maprange.gpl", _RG_highest);
+	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
+	system(aptempa);
+	system(aptempb);
 }
 ////////////////
 void cmc::close_statistic() { 

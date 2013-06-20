@@ -1,0 +1,75 @@
+
+reset
+
+#emin=emin/epsilon
+#emax=emax/epsilon
+set term post enh size 12,6.75 color
+set out 'oxmap.eps'
+
+load 'paraentropy.gpl'
+load 'range.gpl'
+
+xmin=xmin/epsilon
+xmax=xmax/epsilon
+
+ymin=sqrt(ymin)/sigma
+ymax=sqrt(ymax)/sigma
+
+set xrange [xmin:xmax]
+set yrange [ymin:ymax]
+
+#set dgrid3d
+#set view 60, 30, 0.85, 1.1
+#set samples 25, 25
+#set isosamples 26, 26
+#set contour base
+#set cntrparam bspline
+#set title "3D gnuplot demo - contour of Sinc function" 
+
+set xlabel '{/Times-Italic E/{/Symbol e}}' font ",36"
+
+set ylabel '{/Times-Italic O(X)}' font ",36" #at xmin-(xmax-xmin)/10.0,ymin+(ymax-ymin)/2.0 #rotate by -90
+
+ztitle='{/Times-Italic O(E,X)}'
+set zlabel ztitle font ",36" tc rgb "black" rotate by 90
+
+set xtics font ",20" tc rgb "black"
+
+set ytics font ",20" tc rgb "black"
+
+set ztics font ",20" tc rgb "black"
+
+set mxtics 5
+set mytics 5
+
+#set logscale y
+
+set grid xtics ytics mxtics mytics
+
+set isosamples 50,50
+
+#set hidden3d
+
+#set cbrange [0:1]
+#set palette gray
+set palette rgbformulae 22, 13, -31
+set pm3d #interpolate 1,1   #set pm3d at bst
+#set xyplane -10.0
+#set view 45,30
+#set zlabel  offset character 1, 0, 0 font "" textcolor lt -1 norotate
+
+#set pm3d map
+#set size square
+
+unset key
+#set border 4095 lt 1 lw 3 lc rgb "black"
+
+#splot [-5:5.01] [-5:5.01] 'MCEFE.dat' u 1:2:3
+#splot 'MCEFE.dat' u 1:2:3 w l lt 1
+
+#set contour base
+#unset surface
+
+splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w pm3d title ztitle
+
+

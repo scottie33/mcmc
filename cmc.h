@@ -102,6 +102,11 @@ public:
 	double _E_highest;   // ....
 	int _E_totalnum;  //        5000
 
+	double _RG_lowest;    //       -20
+	double _RG_interval;  //        0.04
+	double _RG_highest;   // ....
+	int _RG_totalnum;  //        5000
+
 	CMyArray<double> _Probability;
 	CMyArray<double> _Probability_tot;
 	double* _Probability_all;
@@ -397,15 +402,15 @@ private:
 	CMyArray<double> _COM_x_stat;
 	CMyArray<double> _COM_y_stat;
 	CMyArray<double> _COM_z_stat;
-	CMyArray<double> _RG2_x_stat;
-	CMyArray<double> _RG2_y_stat;
-	CMyArray<double> _RG2_z_stat;
+	CMyArray3<double> _RG2_x_stat;
+	CMyArray3<double> _RG2_y_stat;
+	CMyArray3<double> _RG2_z_stat;
 	CMyArray<double> _COM_x_stat_tot;
 	CMyArray<double> _COM_y_stat_tot;
 	CMyArray<double> _COM_z_stat_tot;
-	CMyArray<double> _RG2_x_stat_tot;
-	CMyArray<double> _RG2_y_stat_tot;
-	CMyArray<double> _RG2_z_stat_tot;
+	CMyArray3<double> _RG2_x_stat_tot;
+	CMyArray3<double> _RG2_y_stat_tot;
+	CMyArray3<double> _RG2_z_stat_tot;
 	//CMyArray<double> _ENERAA_stat;
 	CMyArray<double> _ENERLJ_stat;
 	CMyArray<double> _ENERBF_stat;

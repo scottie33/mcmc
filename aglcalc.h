@@ -74,8 +74,6 @@ template<class T> void CMyArray<T>::Build(int Size1, int Size2) {
 	}
 	released=false;
 }
-//////////////////////////
-//////////////////////////
 template<class T> void CMyArray<T>::SetZero() {
 	int totalsize=Dim1_Size*Dim2_Size;
 	if( totalsize==0 || released ) {
@@ -84,7 +82,6 @@ template<class T> void CMyArray<T>::SetZero() {
 	}
 	MEMOSETZERO(pArray[0], sizeof(T)*totalsize);
 }
-//////////////////////////
 template<class T> void CMyArray<T>::Release(void) {
 	if(pArray) {
 		if(pArray[0]) {
@@ -94,6 +91,84 @@ template<class T> void CMyArray<T>::Release(void) {
 		pArray=NULL;
 	}
 	Dim1_Size=Dim2_Size=0;
+	released=true;
+}
+///////////////////////
+/////////////////////////////////////
+template<class T> class CMyArray3 {
+private:
+	bool released;
+	int Dim1_Size, Dim2_Size, Dim3_Size;
+public:
+	T*** pArray;
+	CMyArray3(void);
+	~CMyArray3(void);
+	void Build(int Size1, int Size2, int Size3);
+	void SetZero();
+	void Release(void);
+};
+/////////////////////////////////////
+//////////////////////////
+template<class T> CMyArray3<T>::CMyArray3(void) {
+	pArray=NULL;
+	released=true;
+	Dim1_Size=0;
+	Dim2_Size=0;
+	Dim3_Size=0;
+}
+//////////////////////////
+template<class T> CMyArray3<T>::~CMyArray3(void) {
+	if(!released) {
+		this->Release();
+	}
+}
+//////////////////////////
+template<class T> void CMyArray3<T>::Build(int Size1, int Size2, int Size3) {
+	pArray=NULL;
+	Dim1_Size=Size1;
+	Dim2_Size=Size2;
+	Dim3_Size=Size3;
+	int i=0;
+	int j=0;
+	pArray=new T**[Dim1_Size]; // x
+	for(i=0; i<Dim1_Size; i++) {
+		pArray[i]=new T*[Dim2_Size]; // y
+	}
+	i=Dim1_Size*Dim2_Size*Dim3_Size;
+	pArray[0][0]=new T[i];
+	MEMOSETZERO(pArray[0][0], sizeof(T)*i);
+	for(j=1; j<Dim2_Size; j++) {
+		pArray[0][j]=pArray[0][j-1]+Dim3_Size;
+	}
+	for(i=1; i<Dim1_Size; i++) {
+		for(j=0; j<Dim2_Size; j++) {
+			pArray[i][j]=pArray[0][0]+Dim3_Size*(i*Dim2_Size+j);
+		}
+	}
+	released=false;
+}
+//////////////////////////
+//////////////////////////
+template<class T> void CMyArray3<T>::SetZero() {
+	int totalsize=Dim1_Size*Dim2_Size*Dim3_Size;
+	if( totalsize==0 || released ) {
+		cout<<" can not setzero: CMyArray<T>::SetZero"<<endl;
+		exit(LOGICERROR);
+	}
+	MEMOSETZERO(pArray[0][0], sizeof(T)*totalsize);
+}
+//////////////////////////
+template<class T> void CMyArray3<T>::Release(void) {
+	if(pArray) {
+		if(pArray[0]) {
+			for(int i=Dim1_Size; i>0; i--) {
+				delete[] pArray[i-1];
+			}
+		}
+		delete[] pArray;
+		pArray=NULL;
+	}
+	Dim1_Size=Dim2_Size=Dim3_Size=0;
 	released=true;
 }
 ///////////////////////

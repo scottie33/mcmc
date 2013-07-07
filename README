@@ -1,3 +1,12 @@
+PDB input format:
+
+ATOM atomindex atomchemical atomspecial resname chainname resindex xcoor ycoor zcoor
+
+particularly,
+1, 'atomspecial' for real bonding information
+2, 'resname' and 'resindex' for specifying force field, in this package, the [ _ffpara.in ]
+3, 'chaininame' for the statisitcs, such as the RG, distance between chain and etc.
+
 Instruction: (anything in [] is optional, or say, your decision)
 1, make clean
    make
@@ -22,7 +31,9 @@ getPE.py
 5, getcerg.bash
    getcedis.bash
    getceener.bash
-6. getFE.py
+6, getFE.py
+7, getrg2map.bash (just hit it to see what would happen)
+8, getoemap.bash (use the input of 7) 
 
 pdb2psf.py
 makeTlist.py

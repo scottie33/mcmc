@@ -20,24 +20,12 @@ for eafi in `ls COM*.dat`; do
 			paste $eafi $eafj > tempCOM
 			python calcdis.py tempCOM $halflen $halflen $halflen
 			rm tempCOM
-			mv tempCOM.dat ${tempname}.dat
-			echo " file: [ $tempname.dat ] created. "
-			cp ${tempname}.dat distance.dat 
-			gnuplot < draw_distance.gpl
-			mv distance.eps ${tempname}.eps
-			echo " file: [ $tempname.eps ] created. ;-)"
-			#cat tempCOM.dat | awk '{print $1, sqrt( ($2-$6)*($2-$6)+($3-$7)*($3-$7)+($4-$8)*($4-$8) )}' > $tempname
-			#rm $tempname.dat
-			#touch $tempname.dat
-			#cat $tempname | while read line; do
-			#	if [ $i > $halflen ]; then
-			#		echo $i
-			#		echo `expr $i-$halflen` >> $tempname.dat
-			#	else
-			#		echo $i >> $tempname.dat
-			#	fi
-			#done
-			#rm $tempname
+			mv tempCOM.dat ${tempname}_com.dat
+			echo " file: [ ${tempname}_com.dat ] created. "
+			#cp ${tempname}_com.dat distance.dat 
+			#gnuplot < draw_distance.gpl
+			#mv distance.eps ${tempname}_com.eps
+			#echo " file: [ $tempname.eps ] created. ;-)"
 		fi
 	done
 done
@@ -46,7 +34,9 @@ for eafi in `ls RG2*.dat`; do
 	cp $eafi tempRG2.dat
 	gnuplot < draw_RG2.gpl
 	mv tempRG2.eps ${eafi}.eps
+	mv tempFIC.eps ${eafi}_FIC.eps
 	echo " file: [ ${eafi}.eps ] created. ;-)"
+	echo " file: [ ${eafi}_FIC.eps ] created. ;-)"
 done
 
 for eafi in `ls EnerLJ*.dat`; do
@@ -70,6 +60,15 @@ for eafi in `ls EnerDH*.dat`; do
 	gnuplot < draw_EDH.gpl
 	mv tempEnerDH.eps ${eafi}.eps
 	echo " file: [ ${eafi}.eps ] created. ;-)"
+done
+
+for eafi in `ls DIS*.dat`; do
+	if [ $eafi != "distance.dat" ]; then
+		cp $eafi distance.dat 
+		gnuplot < draw_distance2.gpl
+		mv distance.eps ${eafi}.eps
+		echo " file: [ ${eafi}.eps ] created. ;-)"
+	fi
 done
 
 exit 0

@@ -19,7 +19,7 @@ load 'range.gpl'
 
 set xlabel '{/Times-Italic E/{/Symbol e}}' font ",36"
 
-set ylabel '{/Times-Italic log(T/{/Symbol e}})' font ",36" #rotate by -90
+set ylabel '{/Times-Italic log(T_{CE})' font ",36" #rotate by -90
 
 ztitle='{/Times-Italic MCE Free Energy ({/Symbol e})}'
 set zlabel ztitle font ",36" tc rgb "black" rotate by 90
@@ -55,8 +55,8 @@ set border 4095 lt 1 lw 3 lc rgb "black"
 #splot [-5:5.01] [-5:5.01] 'MCEFE.dat' u 1:2:3
 #splot 'MCEFE.dat' u 1:2:3 w l lt 1
 
-set contour base
-unset surface
+#set contour base
+#unset surface
 
-splot 'MCEFE.dat' u 1:2:3 w l title ztitle
+splot 'MCEFE.dat' u 1:2:3 w pm3d title ztitle
 

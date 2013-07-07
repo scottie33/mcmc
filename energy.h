@@ -41,8 +41,8 @@ inline double Energy_DH(double paraK, double aMa2) {
 //#template<class T> inline T
 //#define Energy_LJ(EPSILON,SIGMA12,SIGMA6,d12,d6) 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6)
 inline double Energy_LJ(double EPSILON, double SIGMA12, double SIGMA6, double d12, double d6) {
-	return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6);
-	//return 4.0*(SIGMA12/d12-EPSILON*SIGMA6/d6); //prl
+	//return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6);
+	return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6); //prl
 }
 //pay attention, only value can be used in it, not any proc or function;
 /*inline double Energy_LJ(double ep, double s12, double s6, double d12, double d6) {

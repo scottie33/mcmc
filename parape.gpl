@@ -1,10 +1,10 @@
- emin=0.16
- emax=69.94
- smin=-110.882
- smax=-1.95964
+ emin=-248.56
+ emax=44
+ smin=-382.695
+ smax=-10.5889
  epsilon=1.12999
  sigma=4.7
-valTemp=1.0
+valTemp=0.8
 smin=0.0
-smax=0.00372505890634
+smax=0.00412265292097
 idxCE=0

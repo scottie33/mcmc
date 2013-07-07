@@ -1,19 +1,19 @@
 #!/bin/bash
 
 if [ $# -lt 2 ]; then
-	echo ' getrg2map.bash xangle zangle'
+	echo ' getdismap.bash xangle zangle'
 	echo '           ( xangle=0 zangle=0 for map )'
 	exit -1
 fi
 
-cp rg2maprange.gpl rangetemp.gpl
+cp dismaprange.gpl rangetemp.gpl
 if [ $1 -eq 0 -a $2 -eq 0 ]; then
 	echo "set pm3d map" >> rangetemp.gpl
 else
 	echo "set view $1,$2" >> rangetemp.gpl
 fi
 
-for eafi in `ls rg2*plot.dat`; do
+for eafi in `ls dis*plot.dat`; do
 	echo " working... please do not cut me, your majesty."
 	#python mcenorm.py $eafi #op1
 	#cp $eafi.dat inputfile.dat #op1

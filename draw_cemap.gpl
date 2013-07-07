@@ -17,7 +17,7 @@ load 'paraentropy.gpl'
 #set cntrparam bspline
 #set title "3D gnuplot demo - contour of Sinc function" 
 
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",36"
+set xlabel '{/Times-Italic log(T_{CE})}' font ",36"
 
 set ylabel '{/Times-Italic O(X)}' font ",36" #at xmin-(xmax-xmin)/10.0,ymin+(ymax-ymin)/2.0 #rotate by -90
 
@@ -33,7 +33,7 @@ set ztics font ",20" tc rgb "black"
 set mxtics 5
 set mytics 5
 
-#set logscale y
+#set logscale x
 
 set grid xtics ytics mxtics mytics
 
@@ -52,13 +52,13 @@ set pm3d #interpolate 1,1   #set pm3d at bst
 
 load 'rangetemp.gpl'
 
-xmin=emin/epsilon
-xmax=emax/epsilon
+xmin=xmin/epsilon
+xmax=xmax/epsilon
 
-ymin=ymin/sigma
-ymax=ymax/sigma
+ymin=sqrt(ymin)/sigma
+ymax=sqrt(ymax)/sigma
 
-set xrange [xmin:xmax]
+set xrange [log10(xmin):log10(xmax)]
 set yrange [ymin:ymax]
 
 #set pm3d map
@@ -73,6 +73,6 @@ unset key
 #set contour base
 #unset surface
 
-splot 'inputfile.dat' u ($1/epsilon):($2/sigma):3 w pm3d title ztitle
+splot 'inputfile.dat' u (log10($1)):(sqrt($2)/sigma):3 w pm3d title ztitle
 
 

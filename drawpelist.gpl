@@ -21,6 +21,11 @@ set yrange [0:]
 
 set ytics nomirror 
 
+xmin=emin/epsilon
+xmax=emax/epsilon
+
+set xrange [xmin:xmax]
+
 set xtics nomirror 
 
 set mxtics 5

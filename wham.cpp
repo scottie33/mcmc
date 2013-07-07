@@ -23,13 +23,14 @@ void smoothArray(const double *in, double *out, long N, int n) {
 }
 
 int main(int argc, char** argv) {
-	if(argc<4) {
-		cout<<" cli: wham smoothingsteps epsilon sigma"<<endl;
+	if(argc<5) {
+		cout<<" cli: wham smoothingsteps epsilon sigma N"<<endl;
 		exit(-1);
 	}
 	int smoothsteps=atoi(argv[1]);
 	double epsilon=atof(argv[2]);
 	double sigma=atof(argv[3]);
+	double NumAtoms=atof(argv[4]);
 	int ie=0;
 	int rs=0;
 	int nrep=0;
@@ -350,6 +351,7 @@ int main(int argc, char** argv) {
 	entgpl_stream<<" smax="<<tempmax<<endl;
 	entgpl_stream<<" epsilon="<<epsilon<<endl;
 	entgpl_stream<<" sigma="<<sigma<<endl;
+	entgpl_stream<<" numatoms="<<NumAtoms<<endl;
 	entgpl_stream.close();
 	system("gnuplot draw_entropy.gpl");
 	cout<<" now you may check [ entropy.eps ]. "<<endl;

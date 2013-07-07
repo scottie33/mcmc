@@ -294,6 +294,8 @@ void CChain::memo_free() {
 CMolecule::CMolecule() {
 	//natoms=0;
 	nchains=0;
+	nresidues=0;
+	//indexatmres.clear();
 	/*MemoAllocationFlag=false;
 	MemoEvaluationFlag=false;
 	_XX=NULL;
@@ -335,7 +337,7 @@ void CMolecule::add_arbitrary_info(string someatom_type,
 							    someresidue_iname,
 							    xx_coordinate, yy_coordinate, zz_coordinate,
 							    ZOOMFACTOR);
-	for(index_chain=0; index_chain!=nchains; index_chain++) {
+	for(index_chain=0; index_chain<nchains; index_chain++) {
 		if( chains[index_chain].chainname==somechain_name ) {
 			flag=true;
 			break;
@@ -351,10 +353,37 @@ void CMolecule::add_arbitrary_info(string someatom_type,
 		nchains+=1;
 		//natoms+=1;
 	}
+
 	if(sortingflag) {
 		std::sort(chains.begin(),chains.end());
 	}
 	allatoms.push_back(someatom);
+
+	//cout<<" natoms="<<allatoms.size()<<endl;
+	//cout<<" nchains="<<chains.size()<<endl;
+	flag=false;
+	int index_res=0;
+	for(index_res=0; index_res<nresidues; index_res++) {
+		if( residues[index_res].residuename==someresidue_name && residues[index_res].residueiname==someresidue_iname) {
+			flag=true;
+			break;
+		}
+	}
+	if(flag==true) {
+		residues[index_res].add_arbitrary_info(someatom, ZOOMFACTOR, sortingflag);
+		//cout<<" new atom added to the old res"<<endl;
+	} else {
+		CResidue TempResidue;
+		TempResidue.add_arbitrary_info(someatom, ZOOMFACTOR, sortingflag);
+		residues.push_back(TempResidue);
+		nresidues+=1;
+		//cout<<" new atom added to the new res"<<endl;
+	}
+	//cout<<" nresidues="<<residues.size()<<endl;
+	//cout<<" idxnum="<<index_res<<endl;
+	//cout<<" pushing "<<index_res<<" into the reslist..."<<endl;
+	indexatmres.push_back(index_res);
+	//cout<<" current resindex="<<indexatmres[indexatmres.size()-1]<<endl;
 }
 /////////////////////////
 void CMolecule::add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sortingflag) {
@@ -470,7 +499,7 @@ void CMolecule::writepdbinfo(const char* ftarget, bool ifverbose) {
 	cout<<" Molecule write into [ "<<ftarget<<" ]! Check the infomation u need!"<<endl;
 	cout<<" Molecule write into [ "<<TTStr.substr(0, TTSize-3)+string("xyz")
 		<<" ]! Check the infomation u need!"<<endl;
-	system( (string("python pdb2psf.py ")+string(ftarget)).c_str() );
+	if(system( (string("python pdb2psf.py ")+string(ftarget)).c_str() )) {};
 	writelmpinfo((string(ftarget)+string(".dat")).c_str());
 }
 void CMolecule::writelmpinfo(const char* ftarget) {
@@ -572,6 +601,7 @@ void CMolecule::readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortin
 	vector<string> templist;
 	while(getline(fmolecule, tempstr)) {
 		if( tempstr.substr(0, 4)==string("ATOM") || tempstr.substr(0, 6)==string("HETATM") ) {
+			//cout<<tempstr<<endl;
 			readpdbinfo_str(tempstr, ZOOMFACTOR, sortingflag);
 		}
 		/*if( tempstr.substr(0, 6)==string("CONECT") ) {
@@ -620,7 +650,9 @@ void CMolecule::readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortin
 	memo_evaluation();*/
 	cout<<" This molecule has "<<nchains<<" chains, "
 		<<nresidues<<" residues, and "<<atomnumber<<" atoms:"<<endl;
-	std::sort(allatoms.begin(), allatoms.end());
+	if(sortingflag) {
+		std::sort(allatoms.begin(), allatoms.end());
+	}
 	//atomseries=new CAtom*[atomnumber];
 	int Num_ATM=0;
 	int Num_RES=0;

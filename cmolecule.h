@@ -144,9 +144,12 @@ public:
 	//bool MemoEvaluationFlag;
 ///////////////////////////////////////////////////////////////////////////////////////
 	int nchains;
+	int nresidues;
 	//int natoms; //necessary here.
 	vector<CChain> chains;
+	vector<CResidue> residues;
 	vector<CAtom> allatoms;
+	std::vector<int> indexatmres;
 	//vector<CAtom> allatoms;
 
   	//double* _XX;

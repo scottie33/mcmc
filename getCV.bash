@@ -20,7 +20,7 @@ fi
 touch MCEE.dat
 
 cat $1 | while read line; do
-	./getOE.py squaredE.dat 1 $line
+	python getOE.py squaredE.dat 1 $line
 	cat OET.dat >> MCEE.dat
 done
 
@@ -31,7 +31,7 @@ fi
 touch MCEE2.dat
 
 cat $1 | while read line; do
-	./getOE.py squaredE.dat 2 $line
+	python getOE.py squaredE.dat 2 $line
 	cat OET.dat >> MCEE2.dat
 done
 
@@ -45,7 +45,7 @@ touch CECV.dat
 tempnum=1
 cat _temperaturelist.pls | while read line; do
 	let tempnum=$tempnum+1
-	./getcvfromprob.py probability_each.dat $tempnum $line
+	python getcvfromprob.py probability_each.dat $tempnum $line
 	cat OET.dat >> CECV.dat
 done
 

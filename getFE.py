@@ -84,13 +84,14 @@ for i in range(0,NREM):
 		elif ener[i]>0.0:
 			meanEp=log_cc(meanEp, log(ener[i])+entropy[i]-ener[i]/valTemp)
 	meanEp=exp(meanEp-PFZ)-exp(meanEn-PFZ)
-	print >> hfp, "%f %f %f %f" % (valTemp, meanEp, -PFZ*valTemp, meanEp/valTemp+PFZ)
+	print >> hfp, "%f %f %f %f %f" % (valTemp, meanEp, -PFZ*valTemp, meanEp/valTemp+PFZ, PFZ)
 
 hfp.close()
 print " please check your [HFE.dat]."
 print " format: T E F S"
 
-os.system("echo \"set xrange ["+str(Tlow)+":"+str(Thigh)+"]\" > range.gpl")
+os.system("echo \"xmin="+str(Tlow)+"\" > range.gpl")
+os.system("echo \"xmax="+str(Thigh)+"\" >> range.gpl")
 os.system("gnuplot < draw_fe.gpl")
 
 exit(0)

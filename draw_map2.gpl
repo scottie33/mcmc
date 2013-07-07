@@ -55,8 +55,8 @@ load 'rangetemp.gpl'
 xmin=emin/epsilon
 xmax=emax/epsilon
 
-ymin=ymin/sigma
-ymax=ymax/sigma
+ymin=sqrt(ymin)/sigma
+ymax=sqrt(ymax)/sigma
 
 set xrange [xmin:xmax]
 set yrange [ymin:ymax]
@@ -73,6 +73,6 @@ unset key
 #set contour base
 #unset surface
 
-splot 'inputfile.dat' u ($1/epsilon):($2/sigma):3 w pm3d title ztitle
+splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w pm3d title ztitle
 
 

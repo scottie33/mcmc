@@ -1,5 +1,5 @@
 CC=mpicxx
-CFLAGS=-c -Wall -O3
+CFLAGS=-c -Wall
 #CFLAGS=-c
 LDFLAGS=
 SOURCES=main.cpp cmc.cpp cmolecule.cpp rwpara.cpp ssbf.cpp 

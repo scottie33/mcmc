@@ -69,9 +69,13 @@ public:
 	char* _RecordingNAME;
 	inline void recording();
 	bool _RESTARTFlag;
-	inline void loadrestart();
+	double _ogboxlx;
+	double _ogboxly;
+	double _ogboxlz;
+	inline void loadrestart(double ogboxlx, double ogboxly, double ogboxlz);
 	//inline void trajectory_rec();
 	void make_mapping(); // from _XX, _YY, _ZZ to the vector of atoms.
+	void make_mapping_wrap(); // from _XX, _YY, _ZZ to the vector of atoms.
 	bool chck_bond_len();
     void fout_conformation(bool CHCK_BOND_LEN_OR_NOT);
 	void memo_free();
@@ -396,21 +400,35 @@ private:
 	double* _COM_x;
 	double* _COM_y;
 	double* _COM_z;
+	double* _DISSTAT;
+	double _DISSTAT_lowest;
+	double _DISSTAT_highest;
+	double _DISSTAT_interval;
 	double* _RG2_x;
 	double* _RG2_y;
 	double* _RG2_z;
 	CMyArray<double> _COM_x_stat;
 	CMyArray<double> _COM_y_stat;
 	CMyArray<double> _COM_z_stat;
-	CMyArray3<double> _RG2_x_stat;
+	CMyArray3<double> _DIS_stat;
+
+	int** _CINDEXMAP;
+	/*CMyArray3<double> _RG2_x_stat;
 	CMyArray3<double> _RG2_y_stat;
-	CMyArray3<double> _RG2_z_stat;
+	CMyArray3<double> _RG2_z_stat;*/
+	CMyArray3<double> _RG2_stat;
+	int* _indexRGSTAT;
+	int tempindexstat;
+	int tempnumerstat;
 	CMyArray<double> _COM_x_stat_tot;
 	CMyArray<double> _COM_y_stat_tot;
 	CMyArray<double> _COM_z_stat_tot;
-	CMyArray3<double> _RG2_x_stat_tot;
+
+	CMyArray3<double> _DIS_stat_tot;
+	/*CMyArray3<double> _RG2_x_stat_tot;
 	CMyArray3<double> _RG2_y_stat_tot;
-	CMyArray3<double> _RG2_z_stat_tot;
+	CMyArray3<double> _RG2_z_stat_tot;*/
+	CMyArray3<double> _RG2_stat_tot;
 	//CMyArray<double> _ENERAA_stat;
 	CMyArray<double> _ENERLJ_stat;
 	CMyArray<double> _ENERBF_stat;
@@ -476,7 +494,7 @@ private:
 	double _DIS9;
 	double _DIS12;
 
-	CMyArray<double> tempElj;
+	double*  tempElj;
 	double*  tempEbf;
 	double*  tempEag;
 	double*  tempEdh;
@@ -614,6 +632,9 @@ private:
 
 	double ran;
 
+	double _onethird1;
+	double _onethird2;
+	double _movelength;
 	int iseed_zero;
 	int iseed_len1;
 	int iseed_angle;

@@ -22,6 +22,12 @@ cmc::cmc() {
 
 	_PI_single=acos(-1);
 	_PI_double=acos(-1.0)*2.0; _PI_half=acos(-1.0)/2.0;
+
+	_onethird1=1.0/3.0;
+	_onethird2=2.0/3.0;
+
+	_movelength=1.0;
+
 	sin_PHI=0.0; cos_PHI=0.0;
 	sin_THETA=0.0; cos_THETA=0.0;
 	Len_CB=0.0; Len_CB_xy=0.0; Len_CB_xy_2=0.0;
@@ -165,7 +171,7 @@ void cmc::memo_allocation() {
 	//int i=0;
 	string TempStr;
 	string TempInterval;
-
+	int i=0;
 	tell_procid(); cout<<" memo_allocation start..."<<endl;
 	///////////////   code start  //////////////////	
 	ec=new double[3];
@@ -223,35 +229,51 @@ void cmc::memo_allocation() {
 	_RG2_x=new double[_NUM_chains];
 	_RG2_y=new double[_NUM_chains];
 	_RG2_z=new double[_NUM_chains];
+	if(_NUM_chains>1){
+		_DISSTAT=new double[(_NUM_chains-1)*_NUM_chains/2];
+		_DIS_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
+		_DIS_stat_tot.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
+	}
+	_CINDEXMAP=new int*[_NUM_chains];
+	for(i=0; i<_NUM_chains; i++){
+		_CINDEXMAP[i]=new int[_NUM_chains];
+	}
+	_indexRGSTAT=new int[_NUM_chains];
 	stat_com_x=new double[_NUM_chains];
 	stat_com_y=new double[_NUM_chains];
 	stat_com_z=new double[_NUM_chains];
-
 	
 	_COM_x_stat.Build(_NUM_chains, _E_totalnum);
 	_COM_y_stat.Build(_NUM_chains, _E_totalnum);
 	_COM_z_stat.Build(_NUM_chains, _E_totalnum);
-	_RG2_x_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	
+	/*_RG2_x_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	_RG2_y_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
-	_RG2_z_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
-	_ENERLJ_stat.Build(_NUM_chains*_NUM_chains, _E_totalnum);
+	_RG2_z_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);*/
+	_RG2_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_ENERLJ_stat.Build((_NUM_chains+1)*_NUM_chains/2, _E_totalnum);
 	_ENERBF_stat.Build(_NUM_chains, _E_totalnum);
 	_ENERAG_stat.Build(_NUM_chains, _E_totalnum);
 	_ENERDH_stat.Build(_NUM_chains, _E_totalnum);
-	_ENERLJ_stat_tot.Build(_NUM_chains*_NUM_chains, _E_totalnum);
+	_ENERLJ_stat_tot.Build((_NUM_chains+1)*_NUM_chains/2, _E_totalnum);
 	_ENERBF_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_ENERAG_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_ENERDH_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_COM_x_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_COM_y_stat_tot.Build(_NUM_chains, _E_totalnum);
 	_COM_z_stat_tot.Build(_NUM_chains, _E_totalnum);
-	_RG2_x_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	/*_DIS_x_stat_tot.Build(_NUM_chains, _E_totalnum, 50);
+	_DIS_y_stat_tot.Build(_NUM_chains, _E_totalnum, 50);
+	_DIS_z_stat_tot.Build(_NUM_chains, _E_totalnum, 50);*/
+	
+	/*_RG2_x_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	_RG2_y_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
-	_RG2_z_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+	_RG2_z_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);*/
+	_RG2_stat_tot.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	
 	//_ENERAB_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum);
 	_ENER_delta_LJ_inter=new double[_NUM_chains];
-	tempElj.Build(_NUM_chains,_NUM_chains);
+	tempElj=new double[(_NUM_chains+1)*_NUM_chains/2];
 	tempEbf=new double[_NUM_chains];
 	tempEag=new double[_NUM_chains];
 	tempEdh=new double[_NUM_chains];
@@ -325,7 +347,8 @@ void cmc::memo_setzero() {
 	
 	string TempStr;
 	string TempInterval;
-	
+	int i=0;
+	int j=0;
 	tell_procid(); cout<<" memo_setzero start..."<<endl;
 	///////////////   code start  //////////////////
 	MEMOSETZERO(ec, sizeof(double)*3);
@@ -369,6 +392,17 @@ void cmc::memo_setzero() {
 	MEMOSETZERO(_RG2_x, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_y, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_z, sizeof(double)*_NUM_chains);
+	
+	if(_NUM_chains>1){
+		MEMOSETZERO(_DISSTAT, sizeof(double)*(_NUM_chains-1)*_NUM_chains/2);
+		_DIS_stat.SetZero();
+		_DIS_stat_tot.SetZero();
+	}
+	for(i=0; i<_NUM_chains; i++){
+		for(j=0; j<_NUM_chains; j++){
+			_CINDEXMAP[i][j]=0.0;
+		}
+	}
 	MEMOSETZERO(stat_com_x, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(stat_com_y, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(stat_com_z, sizeof(double)*_NUM_chains);
@@ -380,21 +414,31 @@ void cmc::memo_setzero() {
 	_COM_x_stat_tot.SetZero();
 	_COM_y_stat_tot.SetZero();
 	_COM_z_stat_tot.SetZero();
-	_RG2_x_stat_tot.SetZero();
+	/*_DIS_x_stat_tot.SetZero();
+	_DIS_y_stat_tot.SetZero();
+	_DIS_z_stat_tot.SetZero();*/
+
+	/*_RG2_x_stat_tot.SetZero();
 	_RG2_y_stat_tot.SetZero();
-	_RG2_z_stat_tot.SetZero();
-	
+	_RG2_z_stat_tot.SetZero();*/
+	_RG2_stat_tot.SetZero();
+		
 	MEMOSETZERO(_ENER_delta_LJ_inter, sizeof(double)*_NUM_chains);
-	tempElj.SetZero();
-	MEMOSETZERO(tempEag, sizeof(int)*_NUM_chains);
-	MEMOSETZERO(tempEbf, sizeof(int)*_NUM_chains);
-	MEMOSETZERO(tempEdh, sizeof(int)*_NUM_chains);
+	MEMOSETZERO(tempElj, sizeof(double)*(_NUM_chains+1)*_NUM_chains/2);
+	MEMOSETZERO(tempEag, sizeof(double)*_NUM_chains);
+	MEMOSETZERO(tempEbf, sizeof(double)*_NUM_chains);
+	MEMOSETZERO(tempEdh, sizeof(double)*_NUM_chains);
 	_COM_x_stat.SetZero();
 	_COM_y_stat.SetZero();
 	_COM_z_stat.SetZero();
-	_RG2_x_stat.SetZero();
+	/*_DIS_x_stat.SetZero();
+	_DIS_y_stat.SetZero();
+	_DIS_z_stat.SetZero();*/
+	
+	/*_RG2_x_stat.SetZero();
 	_RG2_y_stat.SetZero();
-	_RG2_z_stat.SetZero();
+	_RG2_z_stat.SetZero();*/
+	_RG2_stat.SetZero();
 	_ENERLJ_stat.SetZero();
 	_ENERBF_stat.SetZero();
 	_ENERAG_stat.SetZero();
@@ -519,7 +563,7 @@ void cmc::memo_evaluation_fnode() {
 		}
 		_INDEX_CHN_TAIL_real[i]=l;
 		_SIZE_of_chn_real[i]=_INDEX_CHN_TAIL_real[i]-_INDEX_CHN_HEAD_real[i]+1;
-		cout<<" chn["<<i<<"]s("<<_SIZE_of_chn_real[i]<<")<->["<<_INDEX_CHN_HEAD_real[i]<<":"<<_INDEX_CHN_TAIL_real[i]<<endl;
+		cout<<" chn["<<i<<"]s("<<_SIZE_of_chn_real[i]<<")<->["<<_INDEX_CHN_HEAD_real[i]<<":"<<_INDEX_CHN_TAIL_real[i]<<"]"<<endl;
 		index_atm=0;
 		for(j=0; j<Size_RES; j++) {
 			//cout<<j<<endl;
@@ -577,7 +621,7 @@ void cmc::memo_evaluation_fnode() {
 				}
 				_INDEX_chn_atom[numerator+1]=i;
 				_INDEX_chn_or_not_atom[numerator+1]=_INDEX_chn_or_not_chain[i];
-				_INDEX_RES_ATM[numerator+1]=j+index_res; //right
+				_INDEX_RES_ATM[numerator+1]=_system_.indexatmres[numerator]; //right
 				//_Index_ATM_in_RES[numerator+1]=k;
 				_INDEX_atm_in_chn[numerator+1]=index_atm+k; //right
 				_INDEX_atm_in_chn_real[numerator+1]=index_atm_real; //right
@@ -614,7 +658,7 @@ void cmc::memo_evaluation_bcast() {
 	MPI_Bcast(_SIZE_of_chn_real, _NUM_chains, MPI_INT, 0, MPI_COMM_WORLD);
 }
 ///////////////////////////
-inline void cmc::loadrestart() {
+inline void cmc::loadrestart(double ogboxlx, double ogboxly, double ogboxlz) {
 	if(_RESTARTFlag) {
 		cout<<" @Proc"<<setw(3)<<_PROC_ID<<" :: restart loaded."<<endl;
 		char* tFILENAME_conf;
@@ -633,23 +677,23 @@ inline void cmc::loadrestart() {
 		}
 		cout<<" @Proc"<<setw(3)<<_PROC_ID<<" rebuilding the system..."<<endl;
 		for(i=1; i<_NUM_atoms; i++) {
-			while( (_XX[i+1]-_XX[i])>(_PBL_X_2) ) {
-				_XX[i+1]=_XX[i+1]-_PBL_X;
+			while( (_XX[i+1]-_XX[i])>(ogboxlx/2.0) ) {
+				_XX[i+1]=_XX[i+1]-ogboxlx;
 			}
-			while( (_XX[i+1]-_XX[i])<(-_PBL_X_2) ) {
-				_XX[i+1]=_XX[i+1]+_PBL_X;
+			while( (_XX[i+1]-_XX[i])<(-ogboxlx/2.0) ) {
+				_XX[i+1]=_XX[i+1]+ogboxlx;
 			}
-			while( (_YY[i+1]-_YY[i])>(_PBL_Y_2) ) {
-				_YY[i+1]=_YY[i+1]-_PBL_Y;
+			while( (_YY[i+1]-_YY[i])>(ogboxly/2.0) ) {
+				_YY[i+1]=_YY[i+1]-ogboxly;
 			}
-			while( (_YY[i+1]-_YY[i])<(-_PBL_Y_2) ) {
-				_YY[i+1]=_YY[i+1]+_PBL_Y;
+			while( (_YY[i+1]-_YY[i])<(-ogboxly/2.0) ) {
+				_YY[i+1]=_YY[i+1]+ogboxly;
 			}
-			while( (_ZZ[i+1]-_ZZ[i])>(_PBL_Z_2) ) {
-				_ZZ[i+1]=_ZZ[i+1]-_PBL_Z;
+			while( (_ZZ[i+1]-_ZZ[i])>(ogboxlz/2.0) ) {
+				_ZZ[i+1]=_ZZ[i+1]-ogboxlz;
 			}
-			while( (_ZZ[i+1]-_ZZ[i])<(-_PBL_Z_2) ) {
-				_ZZ[i+1]=_ZZ[i+1]+_PBL_Z;
+			while( (_ZZ[i+1]-_ZZ[i])<(-ogboxlz/2.0) ) {
+				_ZZ[i+1]=_ZZ[i+1]+ogboxlz;
 			}
 		}
 		/*cout<<" @Proc"<<setw(3)<<_PROC_ID<<" rebuilt."<<endl;
@@ -667,11 +711,37 @@ void cmc::memo_evaluation() {
 	scatter_temperatures();
 	memo_evaluation_fnode();
 	memo_evaluation_bcast();
-	loadrestart();
+	loadrestart(_ogboxlx, _ogboxly, _ogboxlz);
 
-	_RecordingNAME=new char[50];
 	int i=0;
 	int j=0;
+	int num=0;
+	for(i=0; i<_NUM_chains; i++){
+		for(j=0; j<i; j++){
+			_CINDEXMAP[i][j]=num++;
+			_CINDEXMAP[j][i]=_CINDEXMAP[i][j];
+		}
+	}
+	for(i=0; i<_NUM_chains; i++){
+		_CINDEXMAP[i][i]=num++;
+	}
+	if(_PROC_ID==0) {
+		for(i=0; i<_NUM_chains; i++){
+			for(j=0; j<i; j++){
+				if(i!=j) {
+					cout<<" "<<i<<":"<<j<<":"<<_CINDEXMAP[i][j];
+				}
+			}
+			cout<<endl;
+		}
+		for(i=0; i<_NUM_chains; i++){
+			cout<<" "<<i<<":"<<i<<":"<<_CINDEXMAP[i][i];
+		}
+		cout<<endl;
+	}
+
+	_RecordingNAME=new char[50];
+	
 	for(i=1;i<_SIZE_memo;i++) {
 		_INDEX_LNEIGHBOR[i]=(i-_NEIGHBOR_lj)<=_INDEX_CHN_HEAD[_INDEX_chn_atom[i]]?_INDEX_CHN_HEAD[_INDEX_chn_atom[i]]:(i-_NEIGHBOR_lj); //[
 		_INDEX_RNEIGHBOR[i]=(i+_NEIGHBOR_lj)>=_INDEX_CHN_TAIL[_INDEX_chn_atom[i]]?_INDEX_CHN_TAIL[_INDEX_chn_atom[i]]:(i+_NEIGHBOR_lj); //]
@@ -702,6 +772,12 @@ void cmc::memo_evaluation() {
 			_DIS2_eachatom.pArray[j][i]=_DIS2_eachatom.pArray[i][j];
 		}
 	}
+	/*for(i=0; i<_NUM_chains; i++) {
+		if(_SIZE_of_chn[i]<3) {
+			_RG2_x_stat.SetZero();
+			RG
+		}
+	}*/
 
 	chck_bond_len();
 	if( _NUM_atoms==1 && _INDEX_chn_or_not_atom[1] ) {
@@ -733,8 +809,8 @@ inline void cmc::check_memo() {
 	if(!_IFVERBOSE) { 
 		return;
 	}
-	int tnum_chn=int( log10(double(_NUM_chains)))+1;
-	int tidx_atm=(_NUM_atoms/10)+2;
+	int tnum_chn=int( log10(double(_NUM_chains)));
+	int tidx_atm=int(log10(_NUM_atoms/10))+1;
 	//if(_PROC_ID==0){ return;}
 	for(i=1; i<_SIZE_memo; i++) {
 		//tidx_atm=int( log10(double(_SIZE_of_chn[_INDEX_chn_atom[i]]) ))+2;
@@ -824,15 +900,28 @@ void cmc::memo_free() {
 	_RG2_x=NULL;
 	_RG2_y=NULL;
 	_RG2_z=NULL;
+	if(_NUM_chains>1){
+		delete[] _DISSTAT; _DISSTAT=NULL;
+		_DIS_stat.Release();
+		_DIS_stat_tot.Release();
+	}
+
 	delete[] stat_com_x;
 	stat_com_x=NULL;
 	delete[] stat_com_y;
 	stat_com_y=NULL;
 	delete[] stat_com_z;
 	stat_com_z=NULL;
+	
+	
+	for(int i=0; i<_NUM_chains; i++){
+		delete[] _CINDEXMAP[i];
+	}
+	delete[] _CINDEXMAP;
+	delete[] _indexRGSTAT;
 
 	delete[] _ENER_delta_LJ_inter;
-	tempElj.Release();
+	delete[] tempElj;
 	delete[] tempEag;
 	delete[] tempEbf;
 	delete[] tempEdh;
@@ -840,9 +929,14 @@ void cmc::memo_free() {
 	_COM_x_stat.Release();
 	_COM_y_stat.Release();
 	_COM_z_stat.Release();
-	_RG2_x_stat.Release();
+	/*_DIS_x_stat.Release();
+	_DIS_y_stat.Release();
+	_DIS_z_stat.Release();*/
+	
+	/*_RG2_x_stat.Release();
 	_RG2_y_stat.Release();
-	_RG2_z_stat.Release();
+	_RG2_z_stat.Release();*/
+	_RG2_stat.Release();
 	_ENERLJ_stat.Release();
 	_ENERBF_stat.Release();
 	_ENERAG_stat.Release();
@@ -856,9 +950,14 @@ void cmc::memo_free() {
 	_COM_x_stat_tot.Release();
 	_COM_y_stat_tot.Release();
 	_COM_z_stat_tot.Release();
-	_RG2_x_stat_tot.Release();
+	/*_DIS_x_stat_tot.Release();
+	_DIS_y_stat_tot.Release();
+	_DIS_z_stat_tot.Release();*/
+
+	/*_RG2_x_stat_tot.Release();
 	_RG2_y_stat_tot.Release();
-	_RG2_z_stat_tot.Release();  
+	_RG2_z_stat_tot.Release(); */ 
+	_RG2_stat_tot.Release();  
 
 	//delete[] _rgyration2;
 	//_rgyration2=NULL;
@@ -997,7 +1096,7 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_RUNTIMES_eachstep"), _RUNTIMES_eachstep);
 			readparameter(tempstr, string("_RUNTIMES_totalnum"), _RUNTIMES_totalnum);
 			readparameter(tempstr, string("_RUNTIMES_recording"), _RUNTIMES_recording);
-			readparameter(tempstr, string("_RESTARTFlag"), _RESTARTFlag);
+			//readparameter(tempstr, string("_RESTARTFlag"), _RESTARTFlag);
 			readparameter(tempstr, string("_RUNTIMES_output"), _RUNTIMES_output);
 			readparameter(tempstr, string("_RUNTIMES_remgap"), _RUNTIMES_remgap);
 
@@ -1008,19 +1107,43 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_RG_interval"), _RG_interval);
 			readparameter(tempstr, string("_RG_totalnum"), _RG_totalnum);
 			//readparameter(tempstr, string("_MPI_OR_NOT"), _MPI_OR_NOT);
-		}
-		if( tempvec[0] == string("_OPlist") ) {
-			cout<<" oplist: ";
-			_len_OP=tempvec.size()-1;
-			if(_len_OP!=0) {
-				_OPlist=new int[_len_OP];
+			if( tempvec[0] == string("_OPlist") ) {
+				cout<<" oplist: ";
+				_len_OP=tempvec.size()-1;
+				if(_len_OP!=0) {
+					_OPlist=new int[_len_OP];
+				}
+				for(int i=0; i<_len_OP; i++) {
+					_OPlist[i]=atoi(tempvec[i+1].c_str());
+					cout<<_OPlist[i]<<" ";
+				}
+				cout<<endl;
 			}
-			for(int i=0; i<_len_OP; i++) {
-				_OPlist[i]=atoi(tempvec[i+1].c_str());
-				cout<<_OPlist[i]<<" ";
+			if( tempvec[0] == string("_RESTARTFlag") ) {
+				_ogboxlx=0.0;
+				_ogboxly=0.0;
+				_ogboxlz=0.0;
+				if( tempvec.size()<2 ) {
+					cout<<" you have to specify the value of _RESTARTFlag; exit() load_para;"<<endl;
+					exit(IOERROR);
+				} 
+				readparameter(tempstr, string("_RESTARTFlag"), _RESTARTFlag);
+				if(_RESTARTFlag>0 && tempvec.size()<5) {
+					cout<<" you have to specify the oglx ogly oglz of the og box; exit() load_para;"<<endl;
+					exit(IOERROR);
+				} 
+				if(_RESTARTFlag>0) {
+					cout<<" _RESTARTFlag: TRUE"<<endl;
+					_ogboxlx=atof(tempvec[2].c_str());
+					_ogboxly=atof(tempvec[3].c_str());
+					_ogboxlz=atof(tempvec[4].c_str());
+				} else {
+					cout<<" _RESTARTFlag: FALSE"<<endl;
+				}
+				cout<<" _RESTARTboxlen: "<<_ogboxlx<<" "<<_ogboxly<<" "<<_ogboxlz<<endl;
 			}
-			cout<<endl;
 		}
+		
 		cout<<" now the string is: "<<tempstr<<endl;
 	}
 	cout<<" what happend?"<<endl;
@@ -1086,6 +1209,11 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 		cout<<setw(30)<<" ::_RUNTIMES_eachstep: "<<_RUNTIMES_eachstep<<endl;
 		cout<<setw(30)<<" ::_RUNTIMES_recording: "<<_RUNTIMES_recording<<endl;
 		cout<<setw(30)<<" ::_RESTARTFlag: "<<_RESTARTFlag<<endl;
+		if(_RESTARTFlag>0) {
+			cout<<setw(30)<<" ::_ogboxlx: "<<_ogboxlx<<endl;
+			cout<<setw(30)<<" ::_ogboxly: "<<_ogboxly<<endl;
+			cout<<setw(30)<<" ::_ogboxlz: "<<_ogboxlz<<endl;
+		}
 		cout<<setw(30)<<" ::_RUNTIMES_totalnum: "<<_RUNTIMES_totalnum<<endl;
 		cout<<setw(30)<<" ::_RUNTIMES_output: "<<_RUNTIMES_output<<endl;
 		cout<<setw(30)<<" ::_RUNTIMES_remgap: "<<_RUNTIMES_remgap<<endl;
@@ -1190,11 +1318,16 @@ void cmc::write_parameters(const string FILENAME_para) {
 	}
 	writeparameter(para_ofstream, string("_NUM_replicas"), _NUM_replicas);
 	writeparameter(para_ofstream, string("_RUNTIMES_eachstep"), _RUNTIMES_eachstep);
-	system("rm -fr pdbfiles");
-	system("mkdir pdbfiles");
+	if(system("rm -fr pdbfiles")) {};
+	if(system("mkdir pdbfiles")) {};
 	writeparameter(para_ofstream, string("_RUNTIMES_totalnum"), _RUNTIMES_totalnum);
 	writeparameter(para_ofstream, string("_RUNTIMES_recording"), _RUNTIMES_recording);
 	writeparameter(para_ofstream, string("_RESTARTFlag"), _RESTARTFlag);
+	if(_RESTARTFlag>0) {
+		writeparameter(para_ofstream, string("_ogboxlx"), _ogboxlx);
+		writeparameter(para_ofstream, string("_ogboxly"), _ogboxly);
+		writeparameter(para_ofstream, string("_ogboxlz"), _ogboxlz);
+	}
 	writeparameter(para_ofstream, string("_RUNTIMES_output"), _RUNTIMES_output);
 	writeparameter(para_ofstream, string("_RUNTIMES_remgap"), _RUNTIMES_remgap);
 	//writeparameter(para_ofstream, string("_MPI_OR_NOT"), _MPI_OR_NOT);
@@ -1204,9 +1337,24 @@ void cmc::write_parameters(const string FILENAME_para) {
 	writeparameter(para_ofstream, string("_E_highest"), _E_highest);
 	writeparameter(para_ofstream, string("_E_totalnum"), _E_totalnum);
 	
+	//_RG_totalnum=int(double(_RG_totalnum)/double(_NUM_chains)/double(_NUM_chains));
+	_RG_interval=(_RG_highest-_RG_lowest)/_RG_totalnum;
 	writeparameter(para_ofstream, string("_RG_lowest"), _RG_lowest);
 	writeparameter(para_ofstream, string("_RG_interval"), _RG_interval);
 	writeparameter(para_ofstream, string("_RG_highest"), _RG_highest);
+	_DISSTAT_lowest=0.0;
+	_DISSTAT_highest=(_PBL_X_2>_PBL_Y_2?_PBL_X_2:_PBL_Y_2)>_PBL_Z_2?(_PBL_X_2>_PBL_Y_2?_PBL_X_2:_PBL_Y_2):_PBL_Z_2;
+	_DISSTAT_highest=_DISSTAT_highest*_DISSTAT_highest;
+	_DISSTAT_interval=(_DISSTAT_highest-_DISSTAT_lowest)/_RG_totalnum;
+	//_DISSTAT_lowest+=_DISSTAT_interval;
+	//_DISSTAT_highest+=_DISSTAT_interval;
+	writeparameter(para_ofstream, string("_DISSTAT_lowest"), _DISSTAT_lowest);
+	writeparameter(para_ofstream, string("_DISSTAT_interval"), _DISSTAT_interval);
+	writeparameter(para_ofstream, string("_DISSTAT_highest"), _DISSTAT_highest);
+	tell_procid(); cout<<" rg_totnum="<<_RG_totalnum<<endl;
+	tell_procid(); cout<<" _dis_low="<<_DISSTAT_lowest<<endl;
+	tell_procid(); cout<<" _dis_high="<<_DISSTAT_highest<<endl;
+	tell_procid(); cout<<" _dis_interval="<<_DISSTAT_interval<<endl;
 	writeparameter(para_ofstream, string("_RG_totalnum"), _RG_totalnum);
 
 	cout<<resetiosflags(ios::left);
@@ -1214,6 +1362,9 @@ void cmc::write_parameters(const string FILENAME_para) {
 	cout<<" check [ "<<OFName<<" ] to c if paras loaded right or not."<<endl;
 }
 void cmc::broadcast_parameters() {
+	if(_PROC_ID==0) {
+		tell_procid(); cout<<" broadcasting parameters ... ";
+	}
 	MPI_Bcast(&_IFVERBOSE, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_CoorX1, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_CoorX2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -1281,6 +1432,11 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_RUNTIMES_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RUNTIMES_recording, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RESTARTFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	if(_RESTARTFlag>0) {
+		MPI_Bcast(&_ogboxlx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&_ogboxly, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&_ogboxlz, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	}
 	MPI_Bcast(&_RUNTIMES_output, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RUNTIMES_remgap, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -1293,80 +1449,26 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_RG_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RG_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RG_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	//MPI_Bcast(&_MPI_OR_NOT, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	/*if(_PROC_ID!=0) {
-		cout<<setiosflags(ios::left);
 
-		cout<<setw(30)<<" ::_IFVERBOSE: "<<_IFVERBOSE<<endl;
-		cout<<setw(30)<<" ::_FILENAME_conf: "<<_FILENAME_conf.c_str()<<endl;
-		cout<<setw(30)<<" ::_CoorX1: "<<_CoorX1<<endl;
-		cout<<setw(30)<<" ::_CoorX2: "<<_CoorX2<<endl;
-		cout<<setw(30)<<" ::_CoorY1: "<<_CoorY1<<endl;
-		cout<<setw(30)<<" ::_CoorY2: "<<_CoorY2<<endl;
-		cout<<setw(30)<<" ::_CoorZ1: "<<_CoorZ1<<endl;
-		cout<<setw(30)<<" ::_CoorZ2: "<<_CoorZ2<<endl;
-		cout<<setw(30)<<" ::_PBC_Dim: "<<_PBC_Dim<<endl;
-		cout<<setw(30)<<" ::_PBL_X: "<<_PBL_X<<endl;	
-		cout<<setw(30)<<" ::_PBL_Y: "<<_PBL_Y<<endl;
-		cout<<setw(30)<<" ::_PBL_Z: "<<_PBL_Z<<endl;
-
-		cout<<setw(30)<<" ::_BF_flag: "<<_BF_flag<<endl;
-		cout<<setw(30)<<" ::_AG_flag: "<<_AG_flag<<endl;
-		cout<<setw(30)<<" ::_TEMPERATURE: "<<_TEMPERATURE<<endl;
-		cout<<setw(30)<<" ::_TEMPERATURE_REP: "<<_TEMPERATURE_REP<<endl;
-
-		cout<<setw(30)<<" ::_NUM_atoms: "<<_NUM_atoms<<endl;
-		cout<<setw(30)<<" ::_NUM_residues: "<<_NUM_residues<<endl;
-		cout<<setw(30)<<" ::_NUM_chains: "<<_NUM_chains<<endl;
-
-		cout<<setw(30)<<" ::_NEIGHBOR_lj: "<<_NEIGHBOR_lj<<endl;
-		cout<<setw(30)<<" ::_FLAG_ener: "<<_FLAG_ener<<endl;
-		cout<<setw(30)<<" ::_FLAG_rg2: "<<_FLAG_rg2<<endl;
-
-		cout<<setw(30)<<" ::_RUNTIMES_eachstep: "<<_RUNTIMES_eachstep<<endl;
-		cout<<setw(30)<<" ::_RUNTIMES_totalnum: "<<_RUNTIMES_totalnum<<endl;
-		cout<<setw(30)<<" ::_RUNTIMES_output: "<<_RUNTIMES_output<<endl;
-		cout<<setw(30)<<" ::_RUNTIMES_remgap: "<<_RUNTIMES_remgap<<endl;
-
-		cout<<resetiosflags(ios::left);
-	}*/
+	MPI_Bcast(&_DISSTAT_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_DISSTAT_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_DISSTAT_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	if(_PROC_ID==0) {
+		cout<<" done!"<<endl;
+	}
 }
-///////////////////////////
-/*void cmc::make_dir() {
-	//using sstream::stringstream;
-	//stringstream ss;
-	//ss<<_TEMPERATURE;
-	//string temp_dir=ss.str();
-	//int temp_len=temp_dir.length();
-	//_OUTPUTDIR=new char[10];
-	//temp_dir.copy(_OUTPUTDIR,temp_len,0);
-	//_OUTPUTDIR[temp_len]='\0';
-	//sprintf(_OUTPUTDIR, "%010.5f",_TEMPERATURE);
-	_FNoutput=new char[15];
-	sprintf(_FNoutput, "%010.5f.dat",_TEMPERATURE);
-	ifstream check_file(_FNoutput);
-	if( check_file ) {
-		system( (string("rm -fr ")+string(_FNoutput)).c_str() );
-		//cout<<" DIR: "<<temp_dir<<" was created!"<<endl;
-	} 
-	check_file.close();
-	//system( (string("mkdir ")+string(_OUTPUTDIR)).c_str() );
-	cout<<" :: FILE: ["<<_FNoutput<<"] was created!"<<endl;
-	///okay, no problem.
-	//FNAME=new char[10int(_RUNTIMES_totalnum/10)+];
-	//sprintf(FNAME, "%s/%020.0f.dat",_OUTPUTDIR,_MC_NUM_TOT);
-}*/
-///////////////////////////
+////////////////////////////////
 void cmc::init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf) {
 	int i=0;
 	int j=0;
 	string AType=string("ATOM");
 	string AChem_Name=string("C");
-	string ASpec_Name=string("1");
+	int ASpec_Name=1;
 	string AResi_Name=string("CHN");
 	string AChn_Name=string("A");
 	char AChn_Name_temp[2];//for chain index use!
-	int AResi_Index=1;
+	char ASpec_Name_temp[2];//for chain index use!
+	int AResi_Index=0;
 	double sqrt_3_d_2_BOND=sqrt(3)/2*LEN_bond;
 	double sqrt_1_d_2_BOND=0.5*LEN_bond;
 	int dim=int( pow(NUM_atoms*NUM_chains,1.0/3.0) )+1;
@@ -1379,11 +1481,13 @@ void cmc::init_conformation_a(const int NUM_atoms, const int NUM_chains, const d
 	int direction_y=1;
 	int direction_z=1;
 	for(i=0; i<NUM_chains; i++) {
-		AChn_Name_temp[0]=AChn_Name.c_str()[0]+i;
+		AChn_Name_temp[0]=AChn_Name.c_str()[0]+1;
 		AChn_Name_temp[1]='\0';
 		AChn_Name=string(AChn_Name_temp);
+		sprintf(ASpec_Name_temp, "%d", ASpec_Name++);
+		AResi_Index++;
 		for(j=0; j<temp_atoms; j++) {
-			_system_.add_arbitrary_info(AType, j+i*temp_atoms+1, AChem_Name, ASpec_Name, AResi_Name, AChn_Name, AResi_Index,
+			_system_.add_arbitrary_info(AType, j+i*temp_atoms+1, AChem_Name, string(ASpec_Name_temp), AResi_Name, AChn_Name, AResi_Index,
 										sqrt_3_d_2_BOND*dim_xx, //x
 										sqrt_1_d_2_BOND*(dim_xx%2+2*dim_yy), //y 
 										LEN_bond*dim_zz, 1.0, false); //z
@@ -1424,13 +1528,13 @@ void cmc::load_conformation() {//initialization conformation; init.pdb (xyz);
 	_NUM_atoms=0;
 	int j;
 	int tnresidues;
-	_NUM_residues=0;
+	_NUM_residues=_system_.nresidues;
 	for(int i=0; i<_NUM_chains; i++) {
 		tnresidues=_system_.chains[i].nresidues;
 		for(j=0; j<tnresidues; j++) {
 			_NUM_atoms+=_system_.chains[i].residues[j].natoms;
 		}
-		_NUM_residues+=tnresidues;
+		//_NUM_residues+=tnresidues;
 	}
 }
 ///////////////////////////
@@ -1485,6 +1589,10 @@ void cmc::scatter_temperatures() {
 void cmc::broadcast_epsilonsigma() {
 	MPI_Bcast(_PARA_KB.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_BOND_length.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+	MPI_Bcast(&_movelength, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	tell_procid(); cout<<" length random moving is: "<<_movelength<<endl;
+	
 	MPI_Bcast(_BOND_delta.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_RMIN.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_RMAX.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -1834,6 +1942,9 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 							if(xx>=EP_SIG_X) { continue; }
 							for(yy=0; yy<EP_SIG_Y; yy++ ) {
 								_BOND_length.pArray[xx][yy]=atof(tempvec[yy].c_str());
+								if(_movelength<_BOND_length.pArray[xx][yy]) {
+									_movelength=_BOND_length.pArray[xx][yy];
+								}
 								if(_IFVERBOSE) {
 									cout<<setw(6)<<_BOND_length.pArray[xx][yy]<<" ";
 								}
@@ -1898,13 +2009,13 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			_RMIN.pArray[xx][yy]=_BOND_length.pArray[xx][yy]-_BOND_delta.pArray[xx][yy];
 			_RMAX.pArray[xx][yy]=_BOND_length.pArray[xx][yy]+_BOND_delta.pArray[xx][yy];
 			_DDELTA.pArray[xx][yy]=2.0*_BOND_delta.pArray[xx][yy];
-			_SIGMA3_eachres.pArray[xx][yy]=TRIPLE(_SIGMA_eachres.pArray[xx][yy]);
-			_SIGMA6_eachres.pArray[xx][yy]=SQUARE(_SIGMA3_eachres.pArray[xx][yy]);
+			_SIGMA3_eachres.pArray[xx][yy]=_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
+			_SIGMA6_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA3_eachres.pArray[xx][yy];
 			_SIGMA9_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA6_eachres.pArray[xx][yy];
-			_SIGMA12_eachres.pArray[xx][yy]=SQUARE(_SIGMA6_eachres.pArray[xx][yy]);
-			_R_cut_RR_eachres.pArray[xx][yy]=SQUARE(_R_cut_RR_eachres.pArray[xx][yy]);
+			_SIGMA12_eachres.pArray[xx][yy]=_SIGMA6_eachres.pArray[xx][yy]*_SIGMA6_eachres.pArray[xx][yy];
+			_R_cut_RR_eachres.pArray[xx][yy]=_R_cut_RR_eachres.pArray[xx][yy]*_R_cut_RR_eachres.pArray[xx][yy];
 			_DIS2=_R_cut_RR_eachres.pArray[xx][yy];
-			_DIS6=TRIPLE(_R_cut_RR_eachres.pArray[xx][yy]);
+			_DIS6=_DIS2*_DIS2*_DIS2;
 			_DIS12=_DIS6*_DIS6;
 			_E_cut_RR_eachres.pArray[xx][yy]=Energy_LJ(_EPSILON_eachres.pArray[xx][yy],_SIGMA12_eachres.pArray[xx][yy],_SIGMA6_eachres.pArray[xx][yy],_DIS12,_DIS6);
 			//cout<<_E_cut_RR_eachres.pArray[xx][yy]<<endl;
@@ -1941,41 +2052,21 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 	double t_dis_12;
 	double t_ener;
 	double temp_sig6,temp_sig12;
-	double temp_r6,temp_r12;
-	int t_res=0;
+	//double temp_r6,temp_r12;
+	//int t_res=0;
 	string i_name;
 	string j_name;
-	int i=0;
-	int j=0;
+	//int i=0;
+	//int j=0;
 	char tempiname[5];
 	cout<<" [ ---------- gnuploting the potential profile ---------- ]"<<endl;
 	ofstream pararecord("pararecord.par");
 	for(ep_sig_x=0; ep_sig_x<EP_SIG_X; ep_sig_x++) {
 		for(ep_sig_y=ep_sig_x; ep_sig_y<EP_SIG_Y; ep_sig_y++) {
-			t_res=0;
-			for(i=0;i<_NUM_chains;i++) {
-				for(j=0;j<_system_.chains[i].nresidues;j++) {
-					if( (t_res+j) == ep_sig_x ) {
-						sprintf(tempiname,"%d",_system_.chains[i].residues[j].residueiname);
-						i_name=_system_.chains[i].chainname+string("_")
-						      +tempiname+_system_.chains[i].residues[j].residuename;
-						break;
-					}
-				}
-				t_res+=_system_.chains[i].nresidues;
-			}
-			t_res=0;
-			for(i=0;i<_NUM_chains;i++) {
-				for(j=0;j<_system_.chains[i].nresidues;j++) {
-					if( (t_res+j) == ep_sig_y ) {
-						sprintf(tempiname,"%d",_system_.chains[i].residues[j].residueiname);
-						j_name=_system_.chains[i].chainname+string("_")
-						      +tempiname+_system_.chains[i].residues[j].residuename;
-						break;
-					}
-				}
-				t_res+=_system_.chains[i].nresidues;
-			}
+			sprintf(tempiname,"%d", _system_.residues[ep_sig_x].residueiname);
+			i_name=tempiname+_system_.residues[ep_sig_x].residuename;
+			sprintf(tempiname,"%d", _system_.residues[ep_sig_y].residueiname);
+			j_name=tempiname+_system_.residues[ep_sig_y].residuename;
 			i_name=i_name+string("_")+j_name;
 			ofstream para4gnuplot("para4gnuplot.par");
 			para4gnuplot<<"fn=\'"<<i_name<<"\'\n"
@@ -1991,24 +2082,25 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			ofstream outener( i_name.c_str() );
 			sigma_max=4.0*_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y];
 			dis_inteval=sigma_max/num_inteval;
-			temp_sig6=HEXIAL(_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]);
+			temp_sig6=_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]*_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y];
+			temp_sig6=temp_sig6*temp_sig6*temp_sig6;
 			temp_sig12=temp_sig6*temp_sig6;
-			temp_r6=TRIPLE(_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]);
-			temp_r12=temp_r6*temp_r6;
+			//temp_r6=_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y];
+			//temp_r12=temp_r6*temp_r6;
 			for(xx=1; xx<=num_inteval; xx++) {
 				t_dis=double(xx)*dis_inteval;
 				t_dis_2=t_dis*t_dis;
-				t_dis_6=TRIPLE(t_dis_2);
+				t_dis_6=t_dis_2*t_dis_2*t_dis_2;
 				t_dis_12=t_dis_6*t_dis_6;
 				t_ener=0.0;
 				if(t_dis_2<_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]) {
 					t_ener=Energy_LJ(_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],temp_sig12,temp_sig6,t_dis_12,t_dis_6)
-				    	  -Energy_LJ(_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],temp_sig12,temp_sig6,temp_r12,temp_r6);	
+				    	  -_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_x];	
 				}
 				outener<<t_dis<<"\t"<<t_ener<<"\n";
 			}
 			outener.close();
-			system("gnuplot < draw.gpl");
+			if(system("gnuplot < draw.gpl")) {};
 		}
 	}
 	pararecord.close();
@@ -2167,7 +2259,13 @@ bool cmc::make_change() {
 			_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-_TYPE_atom_ind_real]+cos_THETA*tl;
 		}
 	} else {// if atom does not belongs to a chain;	
-		return false;
+		if(rand_seed(iseed_len1)<_onethird1) {
+			_XX[_INDEX_chosen]+=rand_seed(iseed_len1)*_movelength;
+		} else if(rand_seed(iseed_len1)>_onethird2) {
+			_ZZ[_INDEX_chosen]+=rand_seed(iseed_len1)*_movelength;
+		} else {
+			_YY[_INDEX_chosen]+=rand_seed(iseed_len1)*_movelength;
+		}
 	}
 	_MC_NUM_TOT+=1; /*************  for check program ************/
 	return true;
@@ -2181,12 +2279,16 @@ bool cmc::chck_bond_len() {//after each make mapping!
 	}
 	int i=0;
 	double neighbor_len=0.0;
+	tell_procid();
 	for(i=1; i<_NUM_atoms; i++) {
-		if(_INDEX_chn_atom[i+1]==_INDEX_chn_atom[i]) {
+		if( _INDEX_chn_or_not_atom[i+1] && _INDEX_chn_or_not_atom[i] && _INDEX_CHN_HEAD_real[_INDEX_chn_atom[i+1]]<=i) {
 			neighbor_len=sqrt(_DIS2_eachatom.pArray[i][i+1]);
 			if( !_BF_flag ) {
 				if( fabs(neighbor_len-_BOND_length.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]])>2e-2 ) {
 					cout<<endl<<" distance between "<<i<<" and "<<i+1<<" atoms has some problem: "<<endl;
+					cout<<"_INDEX_chn_or_not_atom[i+1]="<<_INDEX_chn_or_not_atom[i+1]<<endl;
+					cout<<"_INDEX_chn_or_not_atom[i]="<<_INDEX_chn_or_not_atom[i]<<endl;
+					cout<<"_INDEX_CHN_HEAD_real[i+1]="<<_INDEX_CHN_HEAD_real[i+1]<<endl;
 					printf(" neighbor_len=%2.18lf\n", neighbor_len);
 					printf(" _DIS2=%4.18lf\n", _DIS2_eachatom.pArray[i][i+1]);
 					printf(" _BOND_length=%2.18lf\n", _BOND_length.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]]);
@@ -2196,6 +2298,9 @@ bool cmc::chck_bond_len() {//after each make mapping!
 				}
 			} else if( fabs(neighbor_len-_BOND_length.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]])>_BOND_delta.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]] ) {
 				cout<<endl<<" distance between "<<i<<" and "<<i+1<<" atoms has some problem: "<<endl;
+				cout<<"_INDEX_chn_or_not_atom[i+1]="<<_INDEX_chn_or_not_atom[i+1]<<endl;
+				cout<<"_INDEX_chn_or_not_atom[i]="<<_INDEX_chn_or_not_atom[i]<<endl;
+				cout<<"_INDEX_CHN_HEAD_real[i+1]="<<_INDEX_CHN_HEAD_real[i+1]<<endl;
 				printf(" neighbor_len=%e\n", neighbor_len);
 				printf(" _BOND_length=%e\n", _BOND_length.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]]);
 				printf(" neighbor_len-_BOND_length=%e\n", neighbor_len-_BOND_length.pArray[_INDEX_RES_ATM[i]][_INDEX_RES_ATM[i+1]]);
@@ -2400,12 +2505,12 @@ void cmc::make_accept() {
 		_DIS_z_eachatom.pArray[i][_INDEX_chosen]=-_DIS_z_eachatom.pArray[_INDEX_chosen][i];
 	}*/
 	if(_FLAG_ener) {
-		tempElj.pArray[_INDEX_chn_ind][_INDEX_chn_ind]+=_ENER_delta_LJ_intra;
+		tempElj[_CINDEXMAP[_INDEX_chn_ind][_INDEX_chn_ind]]+=_ENER_delta_LJ_intra;
 		for(i=0;i<_INDEX_chn_ind;i++) {
-			tempElj.pArray[_INDEX_chn_ind][i]+=_ENER_delta_LJ_inter[i];
+			tempElj[_CINDEXMAP[_INDEX_chn_ind][i]]+=_ENER_delta_LJ_inter[i];
 		}
 		for(i=_INDEX_chn_ind+1;i<_NUM_chains;i++) {
-			tempElj.pArray[i][_INDEX_chn_ind]+=_ENER_delta_LJ_inter[i];
+			tempElj[_CINDEXMAP[i][_INDEX_chn_ind]]+=_ENER_delta_LJ_inter[i];
 		}
 		if(_BF_flag) {
 			if( _INDEX_chosen > 1 ) {
@@ -2532,8 +2637,35 @@ int cmc::make_mcmove(const int INDEX_coor) {
 	
 }
 ///////////////////////////
-void cmc::make_mapping() {
+void cmc::make_mapping_wrap() {
 	translate2box();
+	int i=0;
+	int j=0;
+	int k=0;
+	int numerator=0;
+	int sz_res=0;
+	int sz_atm=0;
+	for(i=0; i<_NUM_chains; i++) {
+		sz_res=_system_.chains[i].nresidues;
+		for(j=0; j<sz_res; j++) {
+			sz_atm=_system_.chains[i].residues[j].natoms;
+			for(k=0; k<sz_atm; k++) {
+				_system_.allatoms[numerator].x_coordinate=_XX_rec[numerator+1];
+				_system_.allatoms[numerator].y_coordinate=_YY_rec[numerator+1];
+				_system_.allatoms[numerator].z_coordinate=_ZZ_rec[numerator+1];
+				numerator++;	
+			}
+		}
+	}
+	if(numerator!=_NUM_atoms) {
+		cout<<" Total_Num="<<numerator<<endl;
+		cout<<" _NUM_atoms="<<_NUM_atoms<<endl;
+		ErrorMSG("Total_Num!=_NUM_atoms :: cmc::make_mapping_wrap");
+		exit(SIZEERROR);
+	}
+}
+///////////////////////////
+void cmc::make_mapping() {
 	int i=0;
 	int j=0;
 	int k=0;
@@ -2578,7 +2710,7 @@ void cmc::fout_conformation(bool CHCK_BOND_LEN_OR_NOT) {
 			_ZZ_rec[i]=_ZZ_allrep.pArray[_Index_T_rep[j]][i];
 			//cout<<" "<<_XX[i]<<" "<<_YY[i]
 		}
-		make_mapping();
+		make_mapping_wrap();
 		if(CHCK_BOND_LEN_OR_NOT) chck_bond_len();//after each make mapping!
 		sprintf(FILENAME_conf, "confT%03d.pdb", j+1);
 		_system_.writepdbinfo(FILENAME_conf, _IFVERBOSE);
@@ -3584,6 +3716,7 @@ void cmc::run_rem() {
 			index_i=_Index_T_rep[i]; // t[i] in which rep
 			index_j=_Index_T_rep[i-1];
 			_B_delta=(_T_rep_eachrep[i]-_T_rep_eachrep[i-1])*(_E_rep[index_j]-_E_rep[index_i]);
+			//+1.5_realSize*(_E_rep[index_j]-_E_rep[index_i])
 			//cout<<"_B_delta="<<_B_delta<<endl;
 			_NUM_rem[i-1]+=1;
 			if( _B_delta>0.0 ) {	
@@ -3656,7 +3789,7 @@ void cmc::run() {
 		check_file.close();
 		if(file_exist) {
 			//system("del accept_ratio.dat");
-			system("rm accept_ratio.dat");
+			if(system("rm accept_ratio.dat")){};
 			cout<<" later you can check: [ accept_ratio.dat ] for rem accepted ratio ~ "<<endl;
 		}
 	}
@@ -3673,6 +3806,7 @@ void cmc::run() {
 				cout<<" _I_totalnum/_RUNTIMES_totalnum="<<setw(6)<<_I_totalnum+1
 					<<"/"<<setw(6)<<setiosflags(ios::left)<<_RUNTIMES_totalnum
 					<<resetiosflags(ios::left)<<endl;
+				//fout_conformation(false);
 				if(_PROC_ID==0) {
 					ofstream ofstream_acptrto("accept_ratio.dat", ios::app);
 					if( ofstream_acptrto == NULL ) {
@@ -3718,8 +3852,8 @@ void cmc::run() {
 	fout_conformation(true);
 	check_energy();
 
-	cout<<" succ rate : "<<double(_MC_NUM_SUC)/double(_MC_NUM_TOT)<<endl;
-	cout<<" fail rate : "<<double(_MC_NUM_FIL)/double(_MC_NUM_TOT)<<endl;
+	tell_procid(); cout<<" succ rate : "<<double(_MC_NUM_SUC)/double(_MC_NUM_TOT)<<endl;
+	tell_procid(); cout<<" fail rate : "<<double(_MC_NUM_FIL)/double(_MC_NUM_TOT)<<endl;
 	_I_totalnum=0;
 		//fout_conformation_eachrep(true);
 	//}
@@ -3763,8 +3897,7 @@ void cmc::ensembler() {
 	}
 	for(i=0; i<_E_totalnum; i++) {
 		wham_stream_each<<setiosflags(ios::left)<<setw(10)<<_E_lowest+_E_interval*i;
-		for(rs=0; rs<_NUM_replicas; rs++)
-		{
+		for(rs=0; rs<_NUM_replicas; rs++) {
 			wham_stream_each<<" "<<setw(10)<<_Probability_tot.pArray[rs][i];	
 		}
 		wham_stream_each<<resetiosflags(ios::left)<<endl;
@@ -3781,7 +3914,7 @@ void cmc::ensembler() {
 	ensembler_stream<<" emin="<<_E_lowest<<endl;
 	ensembler_stream<<" emax="<<_E_highest<<endl;
 	ensembler_stream.close();
-	system("gnuplot draw_prob.gpl");
+	if(system("gnuplot draw_prob.gpl")){};
 	cout<<" u may check file: [ probability.eps ] now."<<endl;
 	delete[] FileName;
 	
@@ -3807,25 +3940,23 @@ void cmc::init_statistic() {
 		stat_tail=_INDEX_CHN_TAIL[stat_i]+1;
 		if(_FLAG_ener) {
 			for(stat_j=0; stat_j<=stat_i; stat_j++) {
-				tempElj.pArray[stat_i][stat_j]=0.0;
+				tempElj[_CINDEXMAP[stat_i][stat_j]]=0.0;
 				if(stat_i==stat_j) {		
 					stat_head=_INDEX_CHN_HEAD[stat_j];
 					stat_tail=_INDEX_CHN_TAIL[stat_j]+1;
 					for(stat_k=stat_head; stat_k<stat_tail; stat_k++) {
 						for(stat_l=stat_k+1; stat_l<stat_tail; stat_l++) {
-							tempElj.pArray[stat_i][stat_j]+=_ENER_LJ_eachatom.pArray[stat_k][stat_l];
-							//_ENERLJ_stat.pArray[stat_i*_NUM_chains+stat_j][tempindex_judge]+=tempElj[stat_i*_NUM_chains+stat_j];
+							tempElj[_CINDEXMAP[stat_i][stat_j]]+=_ENER_LJ_eachatom.pArray[stat_k][stat_l];
 						}
 					}
 				} else {
 					for(stat_k=_INDEX_CHN_HEAD[stat_i]; stat_k<=_INDEX_CHN_TAIL[stat_i]; stat_k++) {
 						for(stat_l=_INDEX_CHN_HEAD[stat_j]; stat_l<=_INDEX_CHN_TAIL[stat_j]; stat_l++) {
-							tempElj.pArray[stat_i][stat_j]+=_ENER_LJ_eachatom.pArray[stat_k][stat_l];
-							//_ENERLJ_stat.pArray[stat_i*_NUM_chains+stat_j][tempindex_judge]+=tempElj[stat_i*_NUM_chains+stat_j];
+							tempElj[_CINDEXMAP[stat_i][stat_j]]+=_ENER_LJ_eachatom.pArray[stat_k][stat_l];							
 						}
 					}
 				}
-				tempEtot+=tempElj.pArray[stat_i][stat_j];
+				tempEtot+=tempElj[_CINDEXMAP[stat_i][stat_j]];
 			}
 			if(_BF_flag) {
 				////add your code here;
@@ -3876,76 +4007,15 @@ void cmc::init_statistic() {
 			cout<<"       "<<stat_com_x[stat_i]<<endl;
 			cout<<"       "<<stat_com_y[stat_i]<<endl;
 			cout<<"       "<<stat_com_z[stat_i]<<endl;
+
+			for(stat_j=0; stat_j<stat_i; stat_j++) {
+				_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j])*DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j])
+					+DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j])*DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j])
+					+DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j])*DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
+			}
+
 			//over
-			_RG2_x[stat_i]=0.0;
-			_RG2_y[stat_i]=0.0;
-			_RG2_z[stat_i]=0.0;
-			for(stat_j=stat_head; stat_j<stat_tail; stat_j++) {
-				tempnum=_XX[stat_j]-stat_com_x[stat_i];
-				_RG2_x[stat_i]+=tempnum*tempnum;
-				//_RG2_x_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
-				tempnum=_YY[stat_j]-stat_com_y[stat_i];
-				_RG2_y[stat_i]+=tempnum*tempnum;
-				//_RG2_y_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
-				tempnum=_ZZ[stat_j]-stat_com_z[stat_i];
-				_RG2_z[stat_i]+=tempnum*tempnum;
-				//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
-			}
-			cout<<" chain "<<stat_i<<" RG2: "<<endl;
-			cout<<"       "<<_RG2_x[stat_i]/stat_size<<endl;
-			cout<<"       "<<_RG2_y[stat_i]/stat_size<<endl;
-			cout<<"       "<<_RG2_z[stat_i]/stat_size<<endl;
-		}
-	}
-	cout<<" @Proc"<<_PROC_ID<<" Etot="<<tempEtot<<" v.s. CurrentE="<<_ENER_total<<endl;
-	if( fabs(tempEtot-_ENER_total)>1e-6) {
-		cout<<" energy wrong..."<<endl;
-		exit(-1);
-	}
-	cout<<" !! statistic initialized, all variables have to be evaluated, no doubt."<<endl<<endl;
-	_Statistic_over=false;
-}
-////////////////
-inline void cmc::statistic() { //every step!!
-	int i=0;
-	//int j=0;	
-	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
-		stat_size=_SIZE_of_chn[stat_i];
-		stat_head=_INDEX_CHN_HEAD[stat_i];
-		stat_tail=_INDEX_CHN_TAIL[stat_i]+1;
-		if(_FLAG_ener) {
-			if(_INDEX_chn_ind<=stat_i) {
-				//cout<<" e_pre["<<stat_i<<"]="<<tempElj.pArray[stat_i][_INDEX_chn_ind]<<endl;
-				//cout<<" e_inc["<<stat_i<<"]="<<_ENER_delta_LJ_inter[stat_i]<<endl;
-				//tempEtot+=tempElj.pArray[stat_i][_INDEX_chn_ind];	
-				//cout<<" inter["<<stat_i<<"]["<<_INDEX_chn_ind<<"]="<<tempElj.pArray[stat_i][_INDEX_chn_ind]<<endl;
-				_ENERLJ_stat.pArray[stat_i*_NUM_chains+_INDEX_chn_ind][tempindex_judge]+=tempElj.pArray[stat_i][_INDEX_chn_ind];
-			} else {
-				//tempElj.pArray[_INDEX_chn_ind][stat_i]+=_ENER_delta_LJ_inter[stat_i];
-				//cout<<" inter["<<_INDEX_chn_ind<<"]["<<stat_i<<"]="<<tempElj.pArray[_INDEX_chn_ind][stat_i]<<endl;
-				//tempEtot+=tempElj.pArray[_INDEX_chn_ind][stat_i];
-				_ENERLJ_stat.pArray[_INDEX_chn_ind+stat_i*_NUM_chains][tempindex_judge]+=tempElj.pArray[_INDEX_chn_ind][stat_i];
-			}
-			if(_BF_flag) {
-				////add your code here;
-				_ENERBF_stat.pArray[stat_i][tempindex_judge]+=tempEbf[stat_i];
-			}
-			if(_AG_flag) {
-				////add your code here;
-				_ENERAG_stat.pArray[stat_i][tempindex_judge]+=tempEag[stat_i];
-			}
-			if(_DH_flag) {
-				////add your code here;
-				_ENERDH_stat.pArray[stat_i][tempindex_judge]+=tempEdh[stat_i];
-			}
-		}
-		if(_FLAG_rg2) {
-			//cout<<_COM_x[stat_i]<<endl;
-			if(stat_i==_INDEX_chn_ind) { //only current chn com and rg2 needs to be updated.
-				stat_com_x[stat_i]=_COM_x[stat_i]/stat_size;
-				stat_com_y[stat_i]=_COM_y[stat_i]/stat_size;
-				stat_com_z[stat_i]=_COM_z[stat_i]/stat_size;
-				//cout<<_COM_x[stat_i]/stat_size<<endl;
+			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary?
 				_RG2_x[stat_i]=0.0;
 				_RG2_y[stat_i]=0.0;
 				_RG2_z[stat_i]=0.0;
@@ -3960,7 +4030,104 @@ inline void cmc::statistic() { //every step!!
 					_RG2_z[stat_i]+=tempnum*tempnum;
 					//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
 				}
+				cout<<" chain "<<stat_i<<" RG2: "<<endl;
+				cout<<"       "<<_RG2_x[stat_i]/stat_size<<endl;
+				cout<<"       "<<_RG2_y[stat_i]/stat_size<<endl;
+				cout<<"       "<<_RG2_z[stat_i]/stat_size<<endl;
+				_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
+				if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
+					_indexRGSTAT[stat_i]=_RG_totalnum-1;
+				} else if (_indexRGSTAT[stat_i]<0) {
+					_indexRGSTAT[stat_i]=0;
+				} else {
+					_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
+				}
+				cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 			}
+		}
+	}
+	cout<<" @Proc"<<_PROC_ID<<" Etot="<<tempEtot<<" v.s. CurrentE="<<_ENER_total<<endl;
+	if( fabs(tempEtot-_ENER_total)>1e-6) {
+		cout<<" energy wrong..."<<endl;
+		exit(-1);
+	}
+	cout<<" !! statistic initialized, all variables have to be evaluated, no doubt."<<endl<<endl;
+	_Statistic_over=false;
+}
+////////////////
+inline void cmc::statistic() { //every step!!
+	//int i=0;
+	//int j=0;
+	//tell_procid(); cout<<" statistic() "<<endl;	
+	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
+		stat_size=_SIZE_of_chn[stat_i];
+		stat_head=_INDEX_CHN_HEAD[stat_i];
+		stat_tail=_INDEX_CHN_TAIL[stat_i]+1;
+		if(_FLAG_ener) {
+			for(stat_j=0; stat_j<=stat_i; stat_j++) {
+				_ENERLJ_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge]+=tempElj[_CINDEXMAP[stat_i][stat_j]];
+				//tell_procid(); cout<<" statistic() LJ over! "<<stat_i<<" "<<stat_j<<endl;	
+			}
+			if(_BF_flag) {
+				////add your code here;
+				_ENERBF_stat.pArray[stat_i][tempindex_judge]+=tempEbf[stat_i];
+				//tell_procid(); cout<<" statistic() BF over! "<<stat_i<<endl;	
+			}
+			if(_AG_flag) {
+				////add your code here;
+				_ENERAG_stat.pArray[stat_i][tempindex_judge]+=tempEag[stat_i];
+				//tell_procid(); cout<<" statistic() AG over! "<<stat_i<<endl;	
+			}
+			if(_DH_flag) {
+				////add your code here;
+				_ENERDH_stat.pArray[stat_i][tempindex_judge]+=tempEdh[stat_i];
+				//tell_procid(); cout<<" statistic() DH over! "<<stat_i<<endl;	
+			}
+		}
+
+		if(_FLAG_rg2) {
+			//cout<<_COM_x[stat_i]<<endl;
+			if(stat_i==_INDEX_chn_ind) { //only current chn com and rg2 needs to be updated.
+				stat_com_x[stat_i]=_COM_x[stat_i]/stat_size;
+				stat_com_y[stat_i]=_COM_y[stat_i]/stat_size;
+				stat_com_z[stat_i]=_COM_z[stat_i]/stat_size;
+				//cout<<_COM_x[stat_i]/stat_size<<endl;
+				if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) { //necessary?
+					_RG2_x[stat_i]=0.0;
+					_RG2_y[stat_i]=0.0;
+					_RG2_z[stat_i]=0.0;
+					for(stat_j=stat_head; stat_j<stat_tail; stat_j++) {
+						tempnum=_XX[stat_j]-stat_com_x[stat_i];
+						_RG2_x[stat_i]+=tempnum*tempnum;
+						//_RG2_x_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
+						tempnum=_YY[stat_j]-stat_com_y[stat_i];
+						_RG2_y[stat_i]+=tempnum*tempnum;
+						//_RG2_y_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
+						tempnum=_ZZ[stat_j]-stat_com_z[stat_i];
+						_RG2_z[stat_i]+=tempnum*tempnum;
+						//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
+					}
+				}
+				for(stat_j=0; stat_j<stat_i; stat_j++) { // att: i!=j; otherwise it's an error!!! this index not in array _cindexmap;
+					tempnumerstat=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat*tempnumerstat;
+					tempnumerstat=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
+					tempnumerstat=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
+					//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
+				}	
+				for(stat_j=stat_i+1; stat_j<_NUM_chains; stat_j++) {
+					tempnumerstat=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat*tempnumerstat;
+					tempnumerstat=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
+					tempnumerstat=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
+					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
+					//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
+				}
+			}
+
 			//if( stat_i==1 && fabs(stat_com_x[stat_i]-50)>1e-12 )
 			/*if(tempindex_judge==4063 && stat_i==1) {
 				cout<<" Eid["<<tempindex_judge<<"] Cid["<<stat_i<<"] com= "<<stat_com_x[stat_i]<<" rg2= "<<_RG2_x[stat_i]<<endl;
@@ -3969,34 +4136,64 @@ inline void cmc::statistic() { //every step!!
 			_COM_x_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_X(stat_com_x[stat_i]);
 			_COM_y_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_Y(stat_com_y[stat_i]);
 			_COM_z_stat.pArray[stat_i][tempindex_judge]+=Coor_PBC_Z(stat_com_z[stat_i]);
-			
-			i=int((_RG2_x[stat_i]/stat_size-_RG_lowest)/_RG_interval);
-			if(i>=_RG_totalnum) {
-				_RG2_x_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
-			} else if (i<0) {
-				_RG2_x_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
-			} else {
-				_RG2_x_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
-			}
-			i=int((_RG2_y[stat_i]/stat_size-_RG_lowest)/_RG_interval);
-			if(i>=_RG_totalnum) {
-				_RG2_y_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
-			} else if (i<0) {
-				_RG2_y_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
-			} else {
-				_RG2_y_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
-			}
-			i=int((_RG2_z[stat_i]/stat_size-_RG_lowest)/_RG_interval);
-			if(i>=_RG_totalnum) {
-				_RG2_z_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
-			} else if (i<0) {
-				_RG2_z_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
-			} else {
-				_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+
+			//tell_procid(); cout<<" statistic() COM over! "<<stat_i<<endl;	
+
+			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary?
+				/*i=int((_RG2_x[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+				if(i>=_RG_totalnum) {
+					_RG2_x_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+				} else if (i<0) {
+					_RG2_x_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+				} else {
+					_RG2_x_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+				}
+				i=int((_RG2_y[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+				if(i>=_RG_totalnum) {
+					_RG2_y_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+				} else if (i<0) {
+					_RG2_y_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+				} else {
+					_RG2_y_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+				}
+				i=int((_RG2_z[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+				if(i>=_RG_totalnum) {
+					_RG2_z_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
+				} else if (i<0) {
+					_RG2_z_stat.pArray[stat_i][tempindex_judge][0]+=1.0;
+				} else {
+					_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
+				}*/
+				if(stat_i==_INDEX_chn_ind) {
+					_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
+					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
+						_indexRGSTAT[stat_i]=_RG_totalnum-1;
+					} else if (_indexRGSTAT[stat_i]<0) {
+						_indexRGSTAT[stat_i]=0;
+					} /*else {
+						_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
+					}*/
+					//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
+				}
+				_RG2_stat.pArray[stat_i][tempindex_judge][_indexRGSTAT[stat_i]]+=1.0;
 			}
 			//if(_COM_x_stat.pArray[stat_i][tempindex_judge]>1e-6) cout<<stat_i<<" "<<_COM_x_stat.pArray[stat_i][tempindex_judge]<<" "<<_RG2_x_stat.pArray[stat_i][tempindex_judge]<<endl;
 		}
-	} 
+	}
+	if(_FLAG_rg2) { 
+		for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
+			for(stat_j=0; stat_j<stat_i; stat_j++) {
+				tempindexstat=int((_DISSTAT[_CINDEXMAP[stat_i][stat_j]]-_DISSTAT_lowest)/_DISSTAT_interval);
+				if(tempindexstat>=_RG_totalnum) {
+					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][_RG_totalnum-1]+=1.0;
+				} else if (tempindexstat<0) {
+					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][0]+=1.0;
+				} else {
+					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][tempindexstat]+=1.0;
+				}
+			}	
+		}
+	}
 	/*double tempEtot=0.0;
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 		//stat_size=_SIZE_of_chn[stat_i];
@@ -4004,8 +4201,8 @@ inline void cmc::statistic() { //every step!!
 		//stat_tail=_INDEX_CHN_TAIL[stat_i];
 		if(_FLAG_ener) {
 			for(stat_j=0; stat_j<=stat_i; stat_j++) {
-				cout<<" inter["<<stat_i<<"]["<<stat_j<<"]="<<tempElj.pArray[stat_i][stat_j]<<endl;
-				tempEtot+=tempElj.pArray[stat_i][stat_j];
+				cout<<" inter["<<stat_i<<"]["<<stat_j<<"]="<<tempElj[stat_i][stat_j]<<endl;
+				tempEtot+=tempElj[stat_i][stat_j];
 			}
 		}
 	}
@@ -4014,25 +4211,29 @@ inline void cmc::statistic() { //every step!!
 		cout<<" energy wrong..."<<endl;
 		exit(-1);
 	}*/
+
 }
 ////////////////
 void cmc::output_statistic() { //every _runtimes_eachstep
-	MPI_Reduce(_ENERLJ_stat.pArray[0], _ENERLJ_stat_tot.pArray[0], _NUM_chains*_NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_ENERLJ_stat.pArray[0], _ENERLJ_stat_tot.pArray[0], (_NUM_chains+1)*_NUM_chains/2*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_ENERAG_stat.pArray[0], _ENERAG_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_ENERBF_stat.pArray[0], _ENERBF_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_ENERDH_stat.pArray[0], _ENERDH_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_x_stat.pArray[0], _COM_x_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_y_stat.pArray[0], _COM_y_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_z_stat.pArray[0], _COM_z_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_x_stat.pArray[0][0], _RG2_x_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
+	//MPI_Reduce(_RG2_x_stat.pArray[0][0], _RG2_x_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	//MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	//MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	if(_NUM_chains>1) {
+		MPI_Reduce(_DIS_stat.pArray[0][0], _DIS_stat_tot.pArray[0][0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
 	if(_PROC_ID!=0) {
 		return;
 	}
 	cout<<" start statistic output!! "<<endl;
-	char tempfilename[40];
+	char tempfilename[50];
 	//char totofilename[30];
 	//ofstream  totoosELJ; // for check.
 	ofstream* temposELJ;
@@ -4042,24 +4243,82 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	ofstream* temposCOM;
 	ofstream* temposRG2;
 	//ofstream* temposRG2_plot;
-	ofstream* temposRG2_x_plot;
-	ofstream* temposRG2_y_plot;
-	ofstream* temposRG2_z_plot;
-	temposELJ=new ofstream[_NUM_chains*_NUM_chains];
+	//ofstream* temposRG2_x_plot;
+	//ofstream* temposRG2_y_plot;
+	//ofstream* temposRG2_z_plot;
+	ofstream* temposRG2_plot;
+	
+	temposELJ=new ofstream[(_NUM_chains+1)*_NUM_chains/2];
 	temposEBF=new ofstream[_NUM_chains];
 	temposEAG=new ofstream[_NUM_chains];
 	temposEDH=new ofstream[_NUM_chains];
 	temposCOM=new ofstream[_NUM_chains];
 	temposRG2=new ofstream[_NUM_chains];
-	temposRG2_x_plot=new ofstream[_NUM_chains];
-	temposRG2_y_plot=new ofstream[_NUM_chains];
-	temposRG2_z_plot=new ofstream[_NUM_chains];
-	int tempNum_x=0;
-	int tempNum_y=0;
-	int tempNum_z=0;
-	double tempSum_x=0.0;
-	double tempSum_y=0.0;
-	double tempSum_z=0.0;
+	//temposRG2_x_plot=new ofstream[_NUM_chains];
+	//temposRG2_y_plot=new ofstream[_NUM_chains];
+	//temposRG2_z_plot=new ofstream[_NUM_chains];
+	temposRG2_plot=new ofstream[_NUM_chains];
+	
+	//double tempNum_x=0.0;
+	//double tempNum_y=0.0;
+	//double tempNum_z=0.0;
+	//double tempSum_x=0.0;
+	//double tempSum_y=0.0;
+	//double tempSum_z=0.0;
+	double tempNum_all=0.0;
+	double tempSum_all=0.0;
+	if(_NUM_chains>1) {
+		ofstream* temposDIS;
+		ofstream* temposDIS_plot;
+		temposDIS=new ofstream[(_NUM_chains-1)*_NUM_chains/2];
+		temposDIS_plot=new ofstream[(_NUM_chains-1)*_NUM_chains/2];
+		if(_FLAG_rg2) {
+			for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
+				for(stat_j=0; stat_j<stat_i; stat_j++) {
+					sprintf(tempfilename, "DIS%03d%03d.dat", stat_i+1, stat_j+1);
+					cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
+					temposDIS[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
+					cout<<" file "<<tempfilename<<" opened ."<<endl;
+					sprintf(tempfilename, "dis%03d%03d_plot.dat", stat_i+1, stat_j+1);
+					cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
+					temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
+					cout<<" file "<<tempfilename<<" opened ."<<endl;
+					for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
+						tempNum_all=0.0;
+						tempSum_all=0.0;
+						for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
+							tempNum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l];
+							tempSum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l]*(_DISSTAT_lowest+_DISSTAT_interval*stat_l);
+						}
+						if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+							cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
+							exit(LOGICERROR);
+						}
+						if(_Probability_all[stat_k]<1e-6) {
+							temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(8)<<0.0<<endl;
+						} else {
+							temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						             <<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;	
+						}
+						for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
+							if( fabs(tempNum_all)>1e-6 ) {
+							   	temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+							                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
+							                  <<setw(8)<<double(_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l])/double(tempNum_all)<<endl;
+							} else {
+							    temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+							                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
+							                  <<setw(8)<<0.0<<endl;
+							}
+						}
+						temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<" "<<endl;
+					}
+					temposDIS[_CINDEXMAP[stat_i][stat_j]].close();
+					temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].close();
+				}
+			}
+		}
+	}//end of dis output;
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 		stat_size=_SIZE_of_chn[stat_i];
 		cout<<" now writing chn: "<<stat_i+1<<" sz: "<<stat_size<<endl;
@@ -4080,18 +4339,18 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			}*/
 			for(stat_j=0; stat_j<=stat_i; stat_j++) {
 				sprintf(tempfilename, "EnerLJ%03d%03d.dat", stat_i+1, stat_j+1);
-				cout<<" now writing : "<<tempfilename<<" to stream ~ "<<stat_i*_NUM_chains+stat_j<<" ;-) "<<endl;
-				temposELJ[stat_i*_NUM_chains+stat_j].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
+				temposELJ[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
 				cout<<" file "<<tempfilename<<" opened ."<<endl;
 				for(stat_k=0; stat_k<_E_totalnum; stat_k++) {
 					if(_Probability_all[stat_k]<1e-6) {
-						temposELJ[stat_i*_NUM_chains+stat_j]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(10)<<0.0<<endl;
+						temposELJ[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(10)<<0.0<<endl;
 					} else {
-						temposELJ[stat_i*_NUM_chains+stat_j]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-						      <<setw(10)<<_ENERLJ_stat_tot.pArray[stat_i*_NUM_chains+stat_j][stat_k]/_Probability_all[stat_k]<<endl;
+						temposELJ[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						      <<setw(10)<<_ENERLJ_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k]/_Probability_all[stat_k]<<endl;
 					}
 				}
-				temposELJ[stat_i*_NUM_chains+stat_j].close();
+				temposELJ[_CINDEXMAP[stat_i][stat_j]].close();
 			}
 			if(_BF_flag) {
 				////add your code here;
@@ -4145,6 +4404,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			//totoosELJ.close();
 		}
 		if(_FLAG_rg2) {
+
 			sprintf(tempfilename, "COM%03d.dat", stat_i+1);
 			temposCOM[stat_i].open(tempfilename);
 			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
@@ -4169,89 +4429,118 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			}
 			temposCOM[stat_i].close();
 
-			sprintf(tempfilename, "RG2%03d.dat", stat_i+1);
-			temposRG2[stat_i].open(tempfilename);
-			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary? {
+				sprintf(tempfilename, "RG2%03d.dat", stat_i+1);
+				temposRG2[stat_i].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
 
-			sprintf(tempfilename, "rg2%03d_xplot.dat", stat_i+1);
-			temposRG2_x_plot[stat_i].open(tempfilename);
-			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+				/*sprintf(tempfilename, "rg2%03d_xplot.dat", stat_i+1);
+				temposRG2_x_plot[stat_i].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
 
-			sprintf(tempfilename, "rg2%03d_yplot.dat", stat_i+1);
-			temposRG2_y_plot[stat_i].open(tempfilename);
-			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+				sprintf(tempfilename, "rg2%03d_yplot.dat", stat_i+1);
+				temposRG2_y_plot[stat_i].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
 
-			sprintf(tempfilename, "rg2%03d_zplot.dat", stat_i+1);
-			temposRG2_z_plot[stat_i].open(tempfilename);
-			cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+				sprintf(tempfilename, "rg2%03d_zplot.dat", stat_i+1);
+				temposRG2_z_plot[stat_i].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;*/
 
-			for(stat_k=0; stat_k<_E_totalnum; stat_k++) {
-				tempSum_x=0.0;
-				tempSum_y=0.0;
-				tempSum_z=0.0;
-				for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
-					tempNum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j];
-					tempNum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j];
-					tempNum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j];
-					tempSum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
-					tempSum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
-					tempSum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
-				}
-				
-				if( fabs(_Probability_all[stat_k])-tempNum_x>1e-12 ||
-					tempNum_x!=tempNum_y || tempNum_x!=tempNum_z || tempNum_y!=tempNum_z ) {
-					cout<<" something wrong: trgx="<<tempNum_x<<" trgy="<<tempNum_y<<" trgz="<<tempNum_z
-						<<" _Probability_all[stat_k]="<<_Probability_all[stat_k]<<endl;
-					exit(LOGICERROR);
-				}
-				if(_Probability_all[stat_k]<1e-6) {
-					temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					              <<setw(8)<<0.0<<" "
-					              <<setw(8)<<0.0<<" "
-					              <<setw(8)<<0.0<<endl;
-				} else {
-					temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-				             <<setw(10)<<tempSum_x/stat_size/_Probability_all[stat_k]<<" "
-				             <<setw(10)<<tempSum_y/stat_size/_Probability_all[stat_k]<<" "
-				             <<setw(10)<<tempSum_z/stat_size/_Probability_all[stat_k]<<endl;	
-				}
-				for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
-					if( fabs(tempNum_x)>1e-6 ) {
-						temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<double(_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_x)<<endl;
-					} else {
-						temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<0.0<<endl;
-				   	}
-				   	if( fabs(tempNum_y)>1e-6 ) {
-					   	temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<double(_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_y)<<endl;
-					} else {
-					    temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<0.0<<endl;
+				sprintf(tempfilename, "rg2%03d_plot.dat", stat_i+1);
+				temposRG2_plot[stat_i].open(tempfilename);
+				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;
+
+				for(stat_k=0; stat_k<_E_totalnum; stat_k++) {
+					//tempNum_x=0.0;
+					//tempNum_y=0.0;
+					//tempNum_z=0.0;
+					tempNum_all=0.0;
+					//tempSum_x=0.0;
+					//tempSum_y=0.0;
+					//tempSum_z=0.0;
+					tempSum_all=0.0;
+					for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
+						//tempNum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j];
+						//tempNum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j];
+						//tempNum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j];
+						tempNum_all+=_RG2_stat_tot.pArray[stat_i][stat_k][stat_j];
+						//tempSum_x+=_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+						//tempSum_y+=_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+						//tempSum_z+=_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
+						tempSum_all+=_RG2_stat_tot.pArray[stat_i][stat_k][stat_j]*(_RG_lowest+double(stat_j)*_RG_interval);
 					}
-					if( fabs(tempNum_z)>1e-6 ) {
-					   	temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<double(_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j])<<endl;///double(tempNum_z)<<endl;
-					} else {
-					    temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
-					                  <<setw(8)<<0.0<<endl;
+					
+					/*if( fabs(_Probability_all[stat_k])-tempNum_x>1e-12 ||
+						tempNum_x!=tempNum_y || tempNum_x!=tempNum_z || tempNum_y!=tempNum_z ||
+						tempNum_x!=tempNum_all ) {*/
+					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+						/*cout<<" something wrong: trgx="<<tempNum_x<<" trgy="<<tempNum_y<<" trgz="<<tempNum_z
+							<<" _Probability_all[stat_k]="<<" temp_all="<<tempNum_all<<endl;*/
+						cout<<" something wrong: _Probability_all="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
+						exit(LOGICERROR);
 					}
+					if(_Probability_all[stat_k]<1e-6) {
+						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(8)<<0.0<<endl;
+						              /*<<setw(8)<<0.0<<" "
+						              <<setw(8)<<0.0<<" "
+						              <<setw(8)<<0.0<<" "
+						              <<setw(8)<<0.0<<endl;*/
+					} else {
+						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;
+					             /*<<setw(10)<<tempSum_x/_Probability_all[stat_k]<<" "
+					             <<setw(10)<<tempSum_y/_Probability_all[stat_k]<<" "
+					             <<setw(10)<<tempSum_z/_Probability_all[stat_k]<<" "
+					             <<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;*/	
+					}
+					for(stat_j=0; stat_j<_RG_totalnum; stat_j++) {
+						/*if( fabs(tempNum_x)>1e-6 ) {
+							temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<double(_RG2_x_stat_tot.pArray[stat_i][stat_k][stat_j])/double(tempNum_x)<<endl;
+						} else {
+							temposRG2_x_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+					   	}
+					   	if( fabs(tempNum_y)>1e-6 ) {
+						   	temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<double(_RG2_y_stat_tot.pArray[stat_i][stat_k][stat_j])/double(tempNum_y)<<endl;
+						} else {
+						    temposRG2_y_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+						}
+						if( fabs(tempNum_z)>1e-6 ) {
+						   	temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<double(_RG2_z_stat_tot.pArray[stat_i][stat_k][stat_j])/double(tempNum_z)<<endl;
+						} else {
+						    temposRG2_z_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+						}*/
+						if( fabs(tempNum_all)>1e-6 ) {
+						   	temposRG2_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<double(_RG2_stat_tot.pArray[stat_i][stat_k][stat_j])/double(tempNum_all)<<endl;
+						} else {
+						    temposRG2_plot[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_RG_lowest+double(stat_j)*_RG_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+						}
+					}
+					//temposRG2_x_plot[stat_i]<<" "<<endl;
+					//temposRG2_y_plot[stat_i]<<" "<<endl;
+					//temposRG2_z_plot[stat_i]<<" "<<endl;
+					temposRG2_plot[stat_i]<<" "<<endl;
 				}
-				temposRG2_x_plot[stat_i]<<" "<<endl;
-				temposRG2_y_plot[stat_i]<<" "<<endl;
-				temposRG2_z_plot[stat_i]<<" "<<endl;
+				temposRG2[stat_i].close();
+				//temposRG2_x_plot[stat_i].close();
+				//temposRG2_y_plot[stat_i].close();
+				//temposRG2_z_plot[stat_i].close();
+				temposRG2_plot[stat_i].close(); 
 			}
-			temposRG2[stat_i].close();
-			temposRG2_x_plot[stat_i].close();
-			temposRG2_y_plot[stat_i].close();
-			temposRG2_z_plot[stat_i].close();
 		}
 	}
 	delete[] temposCOM;
@@ -4260,24 +4549,32 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	delete[] temposEBF;
 	delete[] temposEDH;
 	delete[] temposRG2; 
-	delete[] temposRG2_x_plot; 
-	delete[] temposRG2_y_plot; 
-	delete[] temposRG2_z_plot; 
+	//delete[] temposRG2_x_plot; 
+	//delete[] temposRG2_y_plot; 
+	//delete[] temposRG2_z_plot; 
+	delete[] temposRG2_plot; 
 	//string tempstr;
 	char aptempa[100];
 	char aptempb[100];
 	sprintf(aptempa, "echo \"xmin=%f\" > range.gpl", _E_lowest);
 	sprintf(aptempb, "echo \"xmax=%f\" >> range.gpl", _E_highest);
 	//tempstr="echo \"set xrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" > range.gpl";
-	system(aptempa);
-	system(aptempb);
+	if(system(aptempa)) {};
+	if(system(aptempb)) {};
 	
-	system("cp range.gpl rg2maprange.gpl");
+	if(system("cp range.gpl rg2maprange.gpl")){};
 	sprintf(aptempa, "echo \"ymin=%f\" >> rg2maprange.gpl", _RG_lowest);
 	sprintf(aptempb, "echo \"ymax=%f\" >> rg2maprange.gpl", _RG_highest);
 	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
-	system(aptempa);
-	system(aptempb);
+	if(system(aptempa)){};
+	if(system(aptempb)){};
+
+	if(system("cp range.gpl dismaprange.gpl")){};
+	sprintf(aptempa, "echo \"ymin=%f\" >> dismaprange.gpl", _DISSTAT_lowest);
+	sprintf(aptempb, "echo \"ymax=%f\" >> dismaprange.gpl", _DISSTAT_highest);
+	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
+	if(system(aptempa)){};
+	if(system(aptempb)){};
 }
 ////////////////
 void cmc::close_statistic() { 

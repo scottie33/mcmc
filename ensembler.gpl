@@ -1,3 +1,3 @@
- nrep=16
- emin=-300
+ nrep=1
+ emin=-200
  emax=100

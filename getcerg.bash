@@ -28,5 +28,6 @@ cat $1 | while read line; do
 done
 
 gnuplot < draw_cerg2.gpl
+gnuplot < draw_cerg2_unlog.gpl
 
 exit 0

@@ -407,6 +407,7 @@ private:
 	double* _RG2_x;
 	double* _RG2_y;
 	double* _RG2_z;
+	double* _RG2_ec;
 	CMyArray<double> _COM_x_stat;
 	CMyArray<double> _COM_y_stat;
 	CMyArray<double> _COM_z_stat;

@@ -229,6 +229,7 @@ void cmc::memo_allocation() {
 	_RG2_x=new double[_NUM_chains];
 	_RG2_y=new double[_NUM_chains];
 	_RG2_z=new double[_NUM_chains];
+	_RG2_ec=new double[_NUM_chains];
 	if(_NUM_chains>1){
 		_DISSTAT=new double[(_NUM_chains-1)*_NUM_chains/2];
 		_DIS_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
@@ -392,6 +393,7 @@ void cmc::memo_setzero() {
 	MEMOSETZERO(_RG2_x, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_y, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_z, sizeof(double)*_NUM_chains);
+	MEMOSETZERO(_RG2_ec, sizeof(double)*_NUM_chains);
 	
 	if(_NUM_chains>1){
 		MEMOSETZERO(_DISSTAT, sizeof(double)*(_NUM_chains-1)*_NUM_chains/2);
@@ -897,9 +899,11 @@ void cmc::memo_free() {
 	delete[] _RG2_x;
 	delete[] _RG2_y;
 	delete[] _RG2_z;
+	delete[] _RG2_ec;
 	_RG2_x=NULL;
 	_RG2_y=NULL;
 	_RG2_z=NULL;
+	_RG2_ec=NULL;
 	if(_NUM_chains>1){
 		delete[] _DISSTAT; _DISSTAT=NULL;
 		_DIS_stat.Release();
@@ -4019,6 +4023,7 @@ void cmc::init_statistic() {
 				_RG2_x[stat_i]=0.0;
 				_RG2_y[stat_i]=0.0;
 				_RG2_z[stat_i]=0.0;
+				_RG2_ec[stat_i]=0.0;
 				for(stat_j=stat_head; stat_j<stat_tail; stat_j++) {
 					tempnum=_XX[stat_j]-stat_com_x[stat_i];
 					_RG2_x[stat_i]+=tempnum*tempnum;
@@ -4030,11 +4035,12 @@ void cmc::init_statistic() {
 					_RG2_z[stat_i]+=tempnum*tempnum;
 					//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
 				}
-				cout<<" chain "<<stat_i<<" RG2: "<<endl;
-				cout<<"       "<<_RG2_x[stat_i]/stat_size<<endl;
-				cout<<"       "<<_RG2_y[stat_i]/stat_size<<endl;
-				cout<<"       "<<_RG2_z[stat_i]/stat_size<<endl;
-				_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
+				_RG2_ec[stat_i]=(_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size;
+				cout<<" chain "<<stat_i<<" RG2: "<<_RG2_ec[stat_i]<<endl;
+				cout<<"       rg2x="<<_RG2_x[stat_i]/stat_size<<endl;
+				cout<<"       rg2y="<<_RG2_y[stat_i]/stat_size<<endl;
+				cout<<"       rg2z="<<_RG2_z[stat_i]/stat_size<<endl;
+				_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]/stat_size-_RG_lowest)/_RG_interval);
 				if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 					_indexRGSTAT[stat_i]=_RG_totalnum-1;
 				} else if (_indexRGSTAT[stat_i]<0) {
@@ -4107,6 +4113,13 @@ inline void cmc::statistic() { //every step!!
 						_RG2_z[stat_i]+=tempnum*tempnum;
 						//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
 					}
+					/*_RG2_ec[stat_i]=0.0; // this is slower than the above code...
+					for(stat_j=stat_head; stat_j<stat_tail; stat_j++) {
+						for(stat_k=stat_j; stat_k<stat_tail; stat_k++) {
+							_RG2_ec[stat_i]+=_DIS2_eachatom.pArray[stat_j][stat_k];
+						}
+					}
+					_RG2_ec[stat_i]=_RG2_ec[stat_i]/stat_size/stat_size;*/
 				}
 				for(stat_j=0; stat_j<stat_i; stat_j++) { // att: i!=j; otherwise it's an error!!! this index not in array _cindexmap;
 					tempnumerstat=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
@@ -4166,6 +4179,7 @@ inline void cmc::statistic() { //every step!!
 				}*/
 				if(stat_i==_INDEX_chn_ind) {
 					_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
+					//_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval); //slower;
 					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 						_indexRGSTAT[stat_i]=_RG_totalnum-1;
 					} else if (_indexRGSTAT[stat_i]<0) {

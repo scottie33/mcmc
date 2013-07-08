@@ -4,7 +4,7 @@ ATOM atomindex atomchemical atomspecial resname chainname resindex xcoor ycoor z
 
 particularly,
 1, 'atomspecial' for real bonding information
-2, 'resname' and 'resindex' for specifying force field, in this package, the [ _ffpara.in ]
+2, 'resname' and 'resindex' for specifying force field, in this package, the [ _ffpara.pls ]
 3, 'chaininame' for the statisitcs, such as the RG, distance between chain and etc.
 
 prerun:
@@ -14,7 +14,7 @@ newpdb.x [ make -f Makefile_newpdb ]
 Instruction: (anything in [] is optional, or say, your decision)
 1, make clean
    make
-2, _config.in [_ffpara.in]
+2, _config.in [ _ffpara.pls ]
    [init].pdb
    _temperaturelist.pls (use ./makeTlist.py to generate it)
 3, mpirun -np [_NUM_of_replicas] [./mcmc]

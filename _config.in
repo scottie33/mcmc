@@ -36,7 +36,7 @@ Q1                    0.00
 Q2                    -0.00
 
 _BF_flag              false              //with bond fluctuation or not;
-_AG_flag              false              //with angle calculation or not;
+_AG_flag              true              //with angle calculation or not;
 _DH_flag              false              //with dihedral calculation or not;
 _FFPARA_FN            _ffpara.pls       //read _epsilon info from this file ...
 _NEIGHBOR_lj          1                  //apart from how many atoms we begin calculation of potential;
@@ -50,7 +50,7 @@ _RG_lowest           0       //it's acutally the x, y, z RG^2 = RG^2 /3 ＝ (RG*
 _RG_interval         40
 _RG_totalnum         50      // actually in the system is _RG_totalnum/NC/NC
 
-_RUNTIMES_eachstep    100           //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
+_RUNTIMES_eachstep    100          //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
 _RUNTIMES_totalnum    1000            //how many steps on each replica; the following para are based on this.
 _RUNTIMES_recording   0                //
 _RUNTIMES_remgap      50               //one rem per remgap*natoms mcs

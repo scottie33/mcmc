@@ -87,6 +87,7 @@ public:
 	int _NUM_atoms;
 	int _NUM_residues;
 	int _NUM_chains;
+	//int** _Series_eachain;//for statistics;
 	int _NUM_chains_real;
 	int _INDEX_chosen;
 	double _ENER_total;

@@ -215,6 +215,8 @@ void cmc::memo_allocation() {
 	_ENER_DH_chosenatom_backup_3=0.0;
 	_ENER_DH_chosenatom_backup_4=0.0;
 
+	//_Series_eachain=new int*[_NUM_chains];
+
 	_DIS2_eachatom.Build(_SIZE_memo,_SIZE_memo);
 	_DIS2_chosenatom_backup=new double[_SIZE_memo];
 	_DIS_x_eachatom.Build(_SIZE_memo,_SIZE_memo);
@@ -377,6 +379,7 @@ void cmc::memo_setzero() {
 	MEMOSETZERO(_ENER_BF_eachatom, sizeof(double)*_SIZE_memo);//i for bond i<->i+1
 	MEMOSETZERO(_ENER_AG_eachatom, sizeof(double)*(_SIZE_memo+1));
 	MEMOSETZERO(_ENER_DH_eachatom, sizeof(double)*(_SIZE_memo+2));
+	//MEMOSETZERO(_Series_eachain, sizeof(int*)*_NUM_chains);
 
 	_DIS2_eachatom.SetZero();
 	MEMOSETZERO(_DIS2_chosenatom_backup, sizeof(double)*_SIZE_memo);
@@ -634,8 +637,20 @@ void cmc::memo_evaluation_fnode() {
 			index_atm+=Size_ATM;
 		}
 		_SIZE_of_chn[i]=index_atm;
+		
 		index_res+=Size_RES;
 	}
+	/*numerator=0;
+	for(i=0; i<_NUM_chains; i++) {
+		_Series_eachain[i]=new int[_SIZE_of_chn[i]];
+		for(j=0; j<_NUM_atoms; j++) {
+			if( _system_.atoms[numerator].atomindex==_system_.chains[i].atoms )
+		if(numerator==0) {
+			_TYPE_atom[numerator+1]=-1; //head
+			_INDEX_CHN_HEAD[i]=numerator+1;
+		}
+		numerator++;		
+	}*/
 	//_sigma_surf_1_6=pow(0.4, 1.0/6.0)*_sigma_surf; //new_edition for 9, 3 LJ of semi-finite substrate;
 	tell_procid(); cout<<" memo_evaluation_fnode done."<<endl;
 }
@@ -873,6 +888,9 @@ void cmc::memo_free() {
 	_ENER_AG_eachatom=NULL;
 	delete[] _ENER_DH_eachatom;
 	_ENER_DH_eachatom=NULL;
+
+	//delete[] _Series_eachain;
+	//_Series_eachain=NULL;
 
 	_DIS2_eachatom.Release();
 	delete[] _DIS2_chosenatom_backup;

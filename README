@@ -6,7 +6,8 @@ particularly,
 1, 'atomspecial' for real bonding information
 2, 'resname' and 'resindex' for specifying force field, in this package, the [ _ffpara.pls ]
 3, 'chaininame' for the statisitcs, such as the RG, distance between chain and etc.
-
+4, if 'chaininame' has been separated, please do not compromise!
+   but actually I mean, please compromise, make them different chain...
 prerun:
 to create the initial .pdb file you want 
 you can use:

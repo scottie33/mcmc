@@ -1,4 +1,4 @@
-ATOM      1  C   CHN A   1      41.584 -10.606  -8.715                          
+ATOM      1  C   CHP B   2      41.584 -10.606  -8.715                          
 ATOM      2  C   CHN A   1      42.506  -5.999  -8.629                          
 ATOM      3  C   CHN A   1      42.395  -2.494  -5.498                          
 ATOM      4  C   CHN A   1      38.046  -0.726  -5.266                          
@@ -15,7 +15,7 @@ ATOM     14  C   CHN A   1      20.186  13.692  -4.668
 ATOM     15  C   CHN A   1      16.990  17.129  -4.905                          
 ATOM     16  C   CHN A   1      12.488  17.718  -3.688                          
 ATOM     17  C   CHN A   1      10.021  19.491  -0.102                          
-ATOM     18  C   CHN A   1       6.755  17.940  -3.105                          
+ATOM     18  C   CHP C   2       6.755  17.940  -3.105                          
 CONECT    1    2
 CONECT    2    3
 CONECT    3    4

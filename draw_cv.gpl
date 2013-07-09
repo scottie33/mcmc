@@ -12,7 +12,7 @@ Ecetitle='{/Times-Italic CE Energy}'
 Emcetitle='{/Times-Italic MCE Energy}'
 set xlabel '{/Times-Italic log(T_{CE})}' font ",20"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic Heat Capacity}' font ",20"# tc rgb "#880000"
+set ylabel '{/Times-Italic C_{v}/k_{B}}' font ",20"# tc rgb "#880000"
 set y2label '{/Times-Italic Energy}' font ",20" rotate by -90# tc rgb "#880000"
 #set xrange [0.01:10.0]
 #smax=(smax-smin)*1.1+smin
@@ -53,7 +53,7 @@ Ecetitle='{/Times-Italic CE Energy}'
 Emcetitle='{/Times-Italic MCE Energy}'
 set xlabel '{/Times-Italic T_{CE}}' font ",20"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic Heat Capacity}' font ",20"# tc rgb "#880000"
+set ylabel '{/Times-Italic C_{v}/k_{B}}' font ",20"# tc rgb "#880000"
 set y2label '{/Times-Italic Energy}' font ",20" rotate by -90# tc rgb "#880000"
 #set xrange [0.01:10.0]
 #smax=(smax-smin)*1.1+smin
@@ -68,7 +68,7 @@ set mxtics 10
 set mytics 5
 set my2tics 5
 #set grid xtics lt 0 lw 1 lc rgb "#0000ff"
-set key top center
+set key right center
 #set key box
 #plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
 

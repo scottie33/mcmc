@@ -12,7 +12,7 @@ cp drawpelist.gpl drawpelistt.gpl
 num=1
 for i in $@;do
 	echo "t=$i"
-	./getPE.py $i #> templog
+	python getPE.py $i #> templog
 	mv PE.dat PE_$num.dat
 	
 	if [ $num -eq 1 ]; then

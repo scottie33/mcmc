@@ -232,6 +232,12 @@ void cmc::memo_allocation() {
 	_RG2_y=new double[_NUM_chains];
 	_RG2_z=new double[_NUM_chains];
 	_RG2_ec=new double[_NUM_chains];
+	_RG2_actual_x.Build(_NUM_chains,_E_totalnum);
+	_RG2_actual_xtot.Build(_NUM_chains,_E_totalnum);
+	_RG2_actual_y.Build(_NUM_chains,_E_totalnum);
+	_RG2_actual_ytot.Build(_NUM_chains,_E_totalnum);
+	_RG2_actual_z.Build(_NUM_chains,_E_totalnum);
+	_RG2_actual_ztot.Build(_NUM_chains,_E_totalnum);
 	if(_NUM_chains>1){
 		_DISSTAT=new double[(_NUM_chains-1)*_NUM_chains/2];
 		_DIS_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
@@ -397,7 +403,13 @@ void cmc::memo_setzero() {
 	MEMOSETZERO(_RG2_y, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_z, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(_RG2_ec, sizeof(double)*_NUM_chains);
-	
+	_RG2_actual_x.SetZero();
+	_RG2_actual_xtot.SetZero();
+	_RG2_actual_y.SetZero();
+	_RG2_actual_ytot.SetZero();
+	_RG2_actual_z.SetZero();
+	_RG2_actual_ztot.SetZero();
+
 	if(_NUM_chains>1){
 		MEMOSETZERO(_DISSTAT, sizeof(double)*(_NUM_chains-1)*_NUM_chains/2);
 		_DIS_stat.SetZero();
@@ -947,7 +959,12 @@ void cmc::memo_free() {
 	delete[] tempEag;
 	delete[] tempEbf;
 	delete[] tempEdh;
-
+	_RG2_actual_x.Release();
+	_RG2_actual_xtot.Release();
+	_RG2_actual_y.Release();
+	_RG2_actual_ytot.Release();
+	_RG2_actual_z.Release();
+	_RG2_actual_ztot.Release();
 	_COM_x_stat.Release();
 	_COM_y_stat.Release();
 	_COM_z_stat.Release();
@@ -4058,7 +4075,7 @@ void cmc::init_statistic() {
 				cout<<"       rg2x="<<_RG2_x[stat_i]/stat_size<<endl;
 				cout<<"       rg2y="<<_RG2_y[stat_i]/stat_size<<endl;
 				cout<<"       rg2z="<<_RG2_z[stat_i]/stat_size<<endl;
-				_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]/stat_size-_RG_lowest)/_RG_interval);
+				_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval);
 				if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 					_indexRGSTAT[stat_i]=_RG_totalnum-1;
 				} else if (_indexRGSTAT[stat_i]<0) {
@@ -4196,6 +4213,7 @@ inline void cmc::statistic() { //every step!!
 					_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
 				}*/
 				if(stat_i==_INDEX_chn_ind) {
+					//_RG2_ec[stat_i]=(_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size;
 					_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
 					//_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval); //slower;
 					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
@@ -4208,6 +4226,9 @@ inline void cmc::statistic() { //every step!!
 					//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 				}
 				_RG2_stat.pArray[stat_i][tempindex_judge][_indexRGSTAT[stat_i]]+=1.0;
+				_RG2_actual_x.pArray[stat_i][tempindex_judge]+=_RG2_x[stat_i];
+				_RG2_actual_y.pArray[stat_i][tempindex_judge]+=_RG2_y[stat_i];
+				_RG2_actual_z.pArray[stat_i][tempindex_judge]+=_RG2_z[stat_i];
 			}
 			//if(_COM_x_stat.pArray[stat_i][tempindex_judge]>1e-6) cout<<stat_i<<" "<<_COM_x_stat.pArray[stat_i][tempindex_judge]<<" "<<_RG2_x_stat.pArray[stat_i][tempindex_judge]<<endl;
 		}
@@ -4258,6 +4279,10 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	//MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_actual_x.pArray[0], _RG2_actual_xtot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_actual_y.pArray[0], _RG2_actual_ytot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(_RG2_actual_z.pArray[0], _RG2_actual_ztot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
 	if(_NUM_chains>1) {
 		MPI_Reduce(_DIS_stat.pArray[0][0], _DIS_stat_tot.pArray[0][0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
@@ -4512,13 +4537,25 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 						exit(LOGICERROR);
 					}
 					if(_Probability_all[stat_k]<1e-6) {
-						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(8)<<0.0<<endl;
+						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+									<<setw(8)<<0.0<<" "
+									<<setw(8)<<0.0<<" "
+									<<setw(8)<<0.0<<" "
+									<<setw(8)<<0.0<<" "
+									<<setw(8)<<0.0<<endl;
 						              /*<<setw(8)<<0.0<<" "
 						              <<setw(8)<<0.0<<" "
 						              <<setw(8)<<0.0<<" "
 						              <<setw(8)<<0.0<<endl;*/
 					} else {
-						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;
+						temposRG2[stat_i]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						<<setw(10)<<(_RG2_actual_xtot.pArray[stat_i][stat_k]
+							        +_RG2_actual_ytot.pArray[stat_i][stat_k]
+							        +_RG2_actual_ztot.pArray[stat_i][stat_k])/stat_size/_Probability_all[stat_k]<<" "
+						<<setw(10)<<tempSum_all/_Probability_all[stat_k]<<" "
+						<<setw(10)<<_RG2_actual_xtot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<" "
+						<<setw(10)<<_RG2_actual_ytot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<" "
+						<<setw(10)<<_RG2_actual_ztot.pArray[stat_i][stat_k]/stat_size/_Probability_all[stat_k]<<endl;
 					             /*<<setw(10)<<tempSum_x/_Probability_all[stat_k]<<" "
 					             <<setw(10)<<tempSum_y/_Probability_all[stat_k]<<" "
 					             <<setw(10)<<tempSum_z/_Probability_all[stat_k]<<" "

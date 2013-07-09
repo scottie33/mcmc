@@ -415,9 +415,12 @@ private:
 	CMyArray3<double> _DIS_stat;
 
 	int** _CINDEXMAP;
-	/*CMyArray3<double> _RG2_x_stat;
-	CMyArray3<double> _RG2_y_stat;
-	CMyArray3<double> _RG2_z_stat;*/
+	CMyArray<double> _RG2_actual_x;
+	CMyArray<double> _RG2_actual_y;
+	CMyArray<double> _RG2_actual_z;
+	CMyArray<double> _RG2_actual_xtot;
+	CMyArray<double> _RG2_actual_ytot;
+	CMyArray<double> _RG2_actual_ztot;
 	CMyArray3<double> _RG2_stat;
 	int* _indexRGSTAT;
 	int tempindexstat;

@@ -1,21 +1,67 @@
-ATOM      1  C   CHP B   2      41.584 -10.606  -8.715                          
-ATOM      2  C   CHN A   1      42.506  -5.999  -8.629                          
-ATOM      3  C   CHN A   1      42.395  -2.494  -5.498                          
-ATOM      4  C   CHN A   1      38.046  -0.726  -5.266                          
-ATOM      5  C   CHN A   1      37.147   3.009  -7.973                          
-ATOM      6  C   CHN A   1      37.368   5.347 -12.045                          
-ATOM      7  C   CHN A   1      34.465   5.074 -15.730                          
-ATOM      8  C   CHN A   1      31.694   3.204 -12.427                          
-ATOM      9  C   CHN A   1      32.976   6.632  -9.477                          
-ATOM     10  C   CHN A   1      29.332   9.409 -10.523                          
-ATOM     11  C   CHN A   1      28.004  13.849 -11.305                          
-ATOM     12  C   CHN A   1      23.590  15.444 -11.557                          
-ATOM     13  C   CHN A   1      22.659  16.817  -7.159                          
-ATOM     14  C   CHN A   1      20.186  13.692  -4.668                          
-ATOM     15  C   CHN A   1      16.990  17.129  -4.905                          
-ATOM     16  C   CHN A   1      12.488  17.718  -3.688                          
-ATOM     17  C   CHN A   1      10.021  19.491  -0.102                          
-ATOM     18  C   CHP C   2       6.755  17.940  -3.105                          
+ATOM      1  C1  CHN B   1       0.000   0.000   0.000                          
+ATOM      2  C1  CHN B   1       4.070   2.350   0.000                          
+ATOM      3  C1  CHN B   1       8.141   0.000   0.000                          
+ATOM      4  C1  CHN B   1      12.211   2.350   0.000                          
+ATOM      5  C1  CHN B   1      12.211   7.050   0.000                          
+ATOM      6  C1  CHN B   1       8.141   4.700   0.000                          
+ATOM      7  C1  CHN B   1       4.070   7.050   0.000                          
+ATOM      8  C1  CHN B   1       0.000   4.700   0.000                          
+ATOM      9  C1  CHN B   1       0.000   9.400   0.000                          
+ATOM     10  C1  CHN B   1       4.070  11.750   0.000                          
+ATOM     11  C1  CHN B   1       8.141   9.400   0.000                          
+ATOM     12  C1  CHN B   1      12.211  11.750   0.000                          
+ATOM     13  C1  CHN B   1      12.211  16.450   0.000                          
+ATOM     14  C1  CHN B   1       8.141  14.100   0.000                          
+ATOM     15  C1  CHN B   1       4.070  16.450   0.000                          
+ATOM     16  C1  CHN B   1       0.000  14.100   0.000                          
+ATOM     17  C1  CHN B   1       0.000  14.100   4.700                          
+ATOM     18  C1  CHN B   1       4.070  16.450   4.700                          
+ATOM     19  C1  CHN B   1       8.141  14.100   4.700                          
+ATOM     20  C1  CHN B   1      12.211  16.450   4.700                          
+ATOM     21  C1  CHN B   1      12.211  11.750   4.700                          
+ATOM     22  C1  CHN B   1       8.141   9.400   4.700                          
+ATOM     23  C1  CHN B   1       4.070  11.750   4.700                          
+ATOM     24  C1  CHN B   1       0.000   9.400   4.700                          
+ATOM     25  C1  CHN B   1       0.000   4.700   4.700                          
+ATOM     26  C1  CHN B   1       4.070   7.050   4.700                          
+ATOM     27  C1  CHN B   1       8.141   4.700   4.700                          
+ATOM     28  C1  CHN B   1      12.211   7.050   4.700                          
+ATOM     29  C1  CHN B   1      12.211   2.350   4.700                          
+ATOM     30  C1  CHN B   1       8.141   0.000   4.700                          
+ATOM     31  C1  CHN B   1       4.070   2.350   4.700                          
+ATOM     32  C1  CHN B   1       0.000   0.000   4.700                          
+ATOM     33  C1  CHN B   1       0.000   0.000   9.400                          
+ATOM     34  C1  CHN B   1       4.070   2.350   9.400                          
+ATOM     35  C1  CHN B   1       8.141   0.000   9.400                          
+ATOM     36  C1  CHN B   1      12.211   2.350   9.400                          
+ATOM     37  C1  CHN B   1      12.211   7.050   9.400                          
+ATOM     38  C1  CHN B   1       8.141   4.700   9.400                          
+ATOM     39  C1  CHN B   1       4.070   7.050   9.400                          
+ATOM     40  C1  CHN B   1       0.000   4.700   9.400                          
+ATOM     41  C1  CHN B   1       0.000   9.400   9.400                          
+ATOM     42  C1  CHN B   1       4.070  11.750   9.400                          
+ATOM     43  C1  CHN B   1       8.141   9.400   9.400                          
+ATOM     44  C1  CHN B   1      12.211  11.750   9.400                          
+ATOM     45  C1  CHN B   1      12.211  16.450   9.400                          
+ATOM     46  C1  CHN B   1       8.141  14.100   9.400                          
+ATOM     47  C1  CHN B   1       4.070  16.450   9.400                          
+ATOM     48  C1  CHN B   1       0.000  14.100   9.400                          
+ATOM     49  C1  CHN B   1       0.000  14.100  14.100                          
+ATOM     50  C1  CHN B   1       4.070  16.450  14.100                          
+ATOM     51  C1  CHN B   1       8.141  14.100  14.100                          
+ATOM     52  C1  CHN B   1      12.211  16.450  14.100                          
+ATOM     53  C1  CHN B   1      12.211  11.750  14.100                          
+ATOM     54  C1  CHN B   1       8.141   9.400  14.100                          
+ATOM     55  C1  CHN B   1       4.070  11.750  14.100                          
+ATOM     56  C1  CHN B   1       0.000   9.400  14.100                          
+ATOM     57  C1  CHN B   1       0.000   4.700  14.100                          
+ATOM     58  C1  CHN B   1       4.070   7.050  14.100                          
+ATOM     59  C1  CHN B   1       8.141   4.700  14.100                          
+ATOM     60  C1  CHN B   1      12.211   7.050  14.100                          
+ATOM     61  C1  CHN B   1      12.211   2.350  14.100                          
+ATOM     62  C1  CHN B   1       8.141   0.000  14.100                          
+ATOM     63  C1  CHN B   1       4.070   2.350  14.100                          
+ATOM     64  C1  CHN B   1       0.000   0.000  14.100                          
 CONECT    1    2
 CONECT    2    3
 CONECT    3    4
@@ -33,3 +79,49 @@ CONECT   14   15
 CONECT   15   16
 CONECT   16   17
 CONECT   17   18
+CONECT   18   19
+CONECT   19   20
+CONECT   20   21
+CONECT   21   22
+CONECT   22   23
+CONECT   23   24
+CONECT   24   25
+CONECT   25   26
+CONECT   26   27
+CONECT   27   28
+CONECT   28   29
+CONECT   29   30
+CONECT   30   31
+CONECT   31   32
+CONECT   32   33
+CONECT   33   34
+CONECT   34   35
+CONECT   35   36
+CONECT   36   37
+CONECT   37   38
+CONECT   38   39
+CONECT   39   40
+CONECT   40   41
+CONECT   41   42
+CONECT   42   43
+CONECT   43   44
+CONECT   44   45
+CONECT   45   46
+CONECT   46   47
+CONECT   47   48
+CONECT   48   49
+CONECT   49   50
+CONECT   50   51
+CONECT   51   52
+CONECT   52   53
+CONECT   53   54
+CONECT   54   55
+CONECT   55   56
+CONECT   56   57
+CONECT   57   58
+CONECT   58   59
+CONECT   59   60
+CONECT   60   61
+CONECT   61   62
+CONECT   62   63
+CONECT   63   64

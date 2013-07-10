@@ -1,3 +1,9 @@
+get the source code:
+
+ wget|axel https://github.com/scottie33/mcmc/archive/master.zip
+ or just hit ./update.bash
+
+
 PDB input format:
 
 ATOM atomindex atomchemical atomspecial resname chainname resindex xcoor ycoor zcoor

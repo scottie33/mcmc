@@ -15,7 +15,8 @@ you can use:
 newpdb.x [ make -f Makefile_newpdb ]
 
 Instruction: (anything in [] is optional, or say, your decision)
-1, make clean
+1, ./makeall.bash
+*1, make clean
    make
 2, _config.in [ _ffpara.pls ]
    [init].pdb

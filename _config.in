@@ -9,7 +9,7 @@ _IFVERBOSE            true              //verbose or not;
 	
 _FILENAME_conf        pnc.pdb       //if 'f': file name of initial conformation
 _RESTARTFlag          false
-#_RESTARTFlag         true 150 150 150 // boxlx, boxly, boxlz;
+#_RESTARTFlag         true 300 300 300 // boxlx, boxly, boxlz;
 _ENSEMBLE_AVERAGE     true              //ensemble out or not when ro==1, will slow down as 'true';
 _FLAG_rg2             true              //calculate the dis of rg2 or not;
 _FLAG_ener            true              //calculate the dis of ener or not;
@@ -21,12 +21,12 @@ _OPlist 1 1
 // please be awared: no comments this line, this line is pure arguments for PAMCS.
 
 
-_CoorX1               -75.0            //BOUNDARY of BOX - Xmin;
-_CoorX2               75.0              //BOUNDARY of BOX - Xmax;
-_CoorY1               -75.0            //BOUNDARY of BOX - Ymin;
-_CoorY2               75.0              //BOUNDARY of BOX - Ymax;
-_CoorZ1               -75.0            //BOUNDARY of BOX - Zmin; testing: -20          when _WALL_effect=true
-_CoorZ2               75.0              //BOUNDARY of BOX - Zmax; testing: 4*CHN_LEN-20 when _WALL_effect=true
+_CoorX1               -150.0            //BOUNDARY of BOX - Xmin;
+_CoorX2               150.0              //BOUNDARY of BOX - Xmax;
+_CoorY1               -150.0            //BOUNDARY of BOX - Ymin;
+_CoorY2               150.0              //BOUNDARY of BOX - Ymax;
+_CoorZ1               -150.0            //BOUNDARY of BOX - Zmin; testing: -20          when _WALL_effect=true
+_CoorZ2               150.0              //BOUNDARY of BOX - Zmax; testing: 4*CHN_LEN-20 when _WALL_effect=true
 _PBC_Dim              1                  //dimention of Periodic Boundary Condition;
 
 _Box -2.5
@@ -36,21 +36,21 @@ Q1                    0.00
 Q2                    -0.00
 
 _BF_flag              false              //with bond fluctuation or not;
-_AG_flag              true              //with angle calculation or not;
+_AG_flag              false              //with angle calculation or not;
 _DH_flag              false              //with dihedral calculation or not;
 _FFPARA_FN            _ffpara.pls       //read _epsilon info from this file ...
 _NEIGHBOR_lj          1                  //apart from how many atoms we begin calculation of potential;
                                          //for example if _BF_flag == false, you can numerate it 1;
-_NUM_replicas         1
-_E_lowest             -200
-_E_interval           0.06
+_NUM_replicas         2
+_E_lowest             -300
+_E_interval           0.1
 _E_totalnum           5000
 
 _RG_lowest           0       //it's acutally the x, y, z RG^2 = RG^2 /3 ＝ (RG*$\sigma$)^2 / 3
-_RG_interval         40
+_RG_interval         10
 _RG_totalnum         50      // actually in the system is _RG_totalnum/NC/NC
 
-_RUNTIMES_eachstep    100          //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
+_RUNTIMES_eachstep    1000           //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
 _RUNTIMES_totalnum    1000            //how many steps on each replica; the following para are based on this.
 _RUNTIMES_recording   0                //
 _RUNTIMES_remgap      50               //one rem per remgap*natoms mcs

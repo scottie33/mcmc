@@ -16,9 +16,11 @@ else
 	tempname="RG2${cid}.dat"
 fi
 echo " now $tempname"
-cat $tempname | awk '{print $1,$2+$3+$4}' > tempRG2.dat
+#cat $tempname | awk '{print $1,$2+$3+$4}' > tempRG2.dat
+cp $tempname tempRG2.dat
 
 rm tempREC.dat
+
 touch tempREC.dat
 
 cat $1 | while read line; do

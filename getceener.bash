@@ -10,7 +10,7 @@ touch tempREC.dat
 
 cat $2 | while read line; do
 	#getOE filename colid valTemp
-	./getOE.py $1 2 $line
+	python getOE.py $1 2 $line
 	cat OET.dat >> tempREC.dat
 done
 

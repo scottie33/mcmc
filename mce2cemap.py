@@ -10,41 +10,43 @@ def log_cc(log_aa, log_bb): #cc=aa+bb; give log_aa, log_bb, return log_cc;
 		return log_bb+log(1+exp(log_aa-log_bb))
 
 if len(sys.argv) < 2: 
-	print " Syntax: mcenorm.py filename" # [shift]"
+	print " Syntax: mce2cemap.py filename" # [shift]"
+	print " to get: "
+	print "    Ei: rg0 rg1 rg2 ... rgN [\enter] ... "
   	exit(-1)
 
 filename=sys.argv[1]
 
 
-try:
-	fp=open("entropy.dat", 'r')
-	print " loading information of column from: [ entropy.dat ]"
-except IOError:
-	print " can not open file: [ entropy.dat ]"
-	exit(-1)
+# try:
+# 	fp=open("entropy.dat", 'r')
+# 	print " loading information of column from: [ entropy.dat ]"
+# except IOError:
+# 	print " can not open file: [ entropy.dat ]"
+# 	exit(-1)
 
-ener=[]
-entropy=[]
+# ener=[]
+# entropy=[]
 
-while True:
-	line=fp.readline().rstrip()
-	if line:
-		elements=line.split()
-		if len(elements)==2:
-			ener.append(float(elements[0]))
-			entropy.append(float(elements[1]))
-	else:
-		break
+# while True:
+# 	line=fp.readline().rstrip()
+# 	if line:
+# 		elements=line.split()
+# 		if len(elements)==2:
+# 			ener.append(float(elements[0]))
+# 			entropy.append(float(elements[1]))
+# 	else:
+# 		break
 
-print " entropy information loaded, now create the normalized file ... "
-fp.close()
+# print " entropy information loaded, now create the normalized file ... "
+# fp.close()
 
-listlen=len(ener)
+# listlen=len(ener)
 
-#PFZ=-1.7e+308
-#for i in range(0,listlen):
-#	PFZ=log_cc(PFZ, entropy[i]-ener[i]/valTemp)
-#print " log(Z)=%f" % (PFZ)
+# #PFZ=-1.7e+308
+# #for i in range(0,listlen):
+# #	PFZ=log_cc(PFZ, entropy[i]-ener[i]/valTemp)
+# #print " log(Z)=%f" % (PFZ)
 
 try:
 	oefp=open(filename, 'r')

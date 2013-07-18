@@ -11,8 +11,6 @@
 #include <algorithm>
 using namespace std;
 
-#define _MIN_DOUBLE     -1.7e308
-#define _MAX_DOUBLE      1.7e308
 #define PRECISION        1e-6
 #define IOERROR         -1
 #define LOGICERROR      -2

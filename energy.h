@@ -3,27 +3,33 @@
 #ifndef _ENERGY_H
 #define _ENERGY_H
 
+
+#define _MIN_DOUBLE     -1.7e308
+#define _MAX_DOUBLE      1.7e308
 #define KBT         1.00
 #define e		   -1.00
 #define E_x			1.00
 #define E_y			0.00
 #define E_z			0.00
-
+//static double tempdis24;
+static double tempdis12;
+static double tempdis6;
 //#define Energy_BF(paraK,dMd2) paraK*dMd2/2.0
-inline double Energy_BF(double paraK, double dMd2) {
-	return paraK*dMd2/2.0;
+inline double  Energy_BF(const double&  paraK, const double& dMd, const double& bondlen) {
+	tempdis6=dMd-bondlen;
+	return paraK*tempdis6*tempdis6/2.0;
 }
 //#define Energy_AG(paraK,aMa2) paraK*aMa2/2.0
-/*inline double Energy_AG(double paraK, double cosaMa2, double sinaMa2, double costhe0, double sinthe0) {
+/*inline const double&  Energy_AG(const double&  paraK, const double&  cosaMa2, const double&  sinaMa2, const double&  costhe0, const double&  sinthe0) {
 	return paraK*(1-cosaMa2*costhe0-sinaMa2*sinthe0);
 }
-inline double Energy_DH(double paraK, double cosaMa2, double sinaMa2, double costhe0, double sinthe0) {
+inline const double&  Energy_DH(const double&  paraK, const double&  cosaMa2, const double&  sinaMa2, const double&  costhe0, const double&  sinthe0) {
 	return paraK*(1+cosaMa2*costhe0+sinaMa2*sinthe0);//gromacs
 }*/
-inline double Energy_AG(double paraK, double aMa2) {
+inline double  Energy_AG(const double&  paraK, const double&  aMa2) {
 	return paraK*(1-cos(aMa2));
 }
-inline double Energy_DH(double paraK, double aMa2) {
+inline double  Energy_DH(const double&  paraK, const double&  aMa2) {
 	return paraK*(1+cos(aMa2));//gromacs
 }
 //{paraK*SQUARE(d-d0)/2.0} dMd2=square(d-d0)
@@ -40,12 +46,37 @@ inline double Energy_DH(double paraK, double aMa2) {
 //}
 //#template<class T> inline T
 //#define Energy_LJ(EPSILON,SIGMA12,SIGMA6,d12,d6) 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6)
-inline double Energy_LJ(double EPSILON, double SIGMA12, double SIGMA6, double d12, double d6) {
+
+inline double  Energy_LJ(const double&  type, const double&  lambda, const double&  EPSILON, 
+	const double&  SIGMA24, const double&  SIGMA12, const double&  SIGMA6, const double& SIGMA2, const double& SIGMA, 
+	const double& d2) {
 	//return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6);
-	return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6); //prl
+	if(type==1) { // hard sphere
+		if(d2<SIGMA2) {
+			return _MAX_DOUBLE;
+		} else if(d2<lambda*lambda*SIGMA2) {
+			return -EPSILON;
+		} else {
+			return 0.0;
+		}
+	} else if(type==2) { // normal lj
+		tempdis6=d2*d2*d2;
+		tempdis12=tempdis6*tempdis6;
+		return 4.0*EPSILON*(SIGMA12/tempdis12-SIGMA6/tempdis6); 
+	} else if(type==3) { // morse potential
+		tempdis6=1.0-exp(-lambda*(sqrt(d2)-SIGMA));
+		return EPSILON*(tempdis6*tempdis6-1.0);
+	} else if(type==4) { // 24-12 LJ
+		tempdis6=d2*d2*d2;
+		tempdis12=tempdis6*tempdis6;
+		//tempdis24=tempdis12*tempdis12;
+		return 4.0*EPSILON*(SIGMA24/tempdis12/tempdis12-SIGMA12/tempdis12); 
+	} else {
+		return 0.0;
+	}
 }
 //pay attention, only value can be used in it, not any proc or function;
-/*inline double Energy_LJ(double ep, double s12, double s6, double d12, double d6) {
+/*inline const double&  Energy_LJ(const double&  ep, const double&  s12, const double&  s6, const double&  d12, const double&  d6) {
 	return 4.0*( fabs(ep)*s12/d12 - ep*s6/d6 );
 }*/
 //{//pay attention d_2=d*d; 

@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -O2
 #CFLAGS=-c
 LDFLAGS=
 SOURCES=wham.cpp rwpara.cpp ssbf.cpp

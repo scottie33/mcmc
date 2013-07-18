@@ -2,6 +2,7 @@
 
 #include "rwpara.h"
 #include "aglcalc.h"
+#include "energy.h"
 
 
 #define _CONVERGENCE 1e-12
@@ -119,7 +120,7 @@ int main(int argc, char** argv) {
 				_INDEX_maxenerdis_eachrep[rs]=ie;
 			}
 		}
-		//cout<<" maxdis["<<rs<<"] at "<<_INDEX_maxenerdis_eachrep[rs]<<endl;
+		//cout<<" maxdis["<<rs<<"] at "<<_INDEX_maxenerdis_eachrep[rs]<<" w/ pe="<<ProbEach.pArray[rs][_INDEX_maxenerdis_eachrep[rs]]<<endl;
 		_INDEX_minenerdis_eachrep[rs]=0;
 		for(ie=_INDEX_maxenerdis_eachrep[rs]; ie>=0; ie--) {
 			if( ProbEach.pArray[rs][ie]<1e-6 ) {

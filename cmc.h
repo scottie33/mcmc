@@ -3,11 +3,14 @@
 #ifndef _CMC_H 
 #define _CMC_H
 
+//#include <omp.h>
 #include <mpi.h>
 #include "cmolecule.h"
 #include "energy.h"
 #include <sstream>
 #include "rwpara.h"
+using namespace MPI;
+
 #define _OUTPUT_LEN  50
 #define _CONVERGENCE 1e-12
 #define _CONF_DIR {string("_conformations")}
@@ -20,7 +23,7 @@ public:
 	void write_parameters(const string FILENAME_para);// and bcast;
 	void broadcast_parameters();
 	//void make_dir();
-	void init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf);
+	void init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf,const double xorigin, const double yorigin, const double zorigin);
 	void initialization();
 	///////////////////////////////////////////////////////////////////////////
 	void load_conformation(); //'a' or 'f'	
@@ -84,6 +87,20 @@ public:
 	string _FILENAME_conf;
 	bool _IFVERBOSE;
 	
+	int _ACCINDEX;
+	//int _ACCINDEX_bf;
+	//int _ACCINDEX_ag;
+	//CMyArray3<double> _EAG_ACC;
+	//CMyArray3<double> _EBF_ACC;
+	CMyArray3<double> _ELJ_ACC;
+	//CMyArray3<double> _EDH_ACC;
+	//double _AG_interval;
+	//CMyArray<double> _BF_interval;
+	CMyArray<double> _LJ_interval;
+	int index_lj;
+	//int bf_index;
+	//double _DH_interval;
+
 	int _NUM_atoms;
 	int _NUM_residues;
 	int _NUM_chains;
@@ -139,11 +156,15 @@ private:
 	CMyArray<double> _PHIZERO_cos;
 	CMyArray<double> _PHIZERO_sin;
 	CMyArray<double> _EPSILON_eachres;
+	CMyArray<double> _LAMBDA_eachres;
+	CMyArray<double> _PPTYPE_eachres;
 	CMyArray<double> _SIGMA_eachres;
+	CMyArray<double> _SIGMA2_eachres;
 	CMyArray<double> _SIGMA3_eachres;
 	CMyArray<double> _SIGMA6_eachres;
 	CMyArray<double> _SIGMA9_eachres;
 	CMyArray<double> _SIGMA12_eachres;
+	CMyArray<double> _SIGMA24_eachres;
 	CMyArray<double> _E_cut_RR_eachres;
 	CMyArray<double> _R_cut_RR_eachres;
 	//CMyArray<int>    _IF_RR_eachatom;
@@ -422,6 +443,14 @@ private:
 	CMyArray<double> _RG2_actual_ytot;
 	CMyArray<double> _RG2_actual_ztot;
 	CMyArray3<double> _RG2_stat;
+	CMyArray<double> _EINT_stat;
+	int _EINT_totalnum;
+	double _EINT_interval;
+	double _EINT_lowest;
+	double _EINT_highest;
+	int* _EINTlist;
+    int _len_EINT;
+    int _EINT_index;
 	int* _indexRGSTAT;
 	int tempindexstat;
 	int tempnumerstat;
@@ -434,6 +463,7 @@ private:
 	CMyArray3<double> _RG2_y_stat_tot;
 	CMyArray3<double> _RG2_z_stat_tot;*/
 	CMyArray3<double> _RG2_stat_tot;
+	CMyArray<double> _EINT_stat_tot;
 	//CMyArray<double> _ENERAA_stat;
 	CMyArray<double> _ENERLJ_stat;
 	CMyArray<double> _ENERBF_stat;

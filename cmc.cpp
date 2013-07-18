@@ -94,12 +94,15 @@ cmc::cmc() {
 	_DH_flag=false;
 	_OPlist=NULL;
 	_len_OP=0;
+	_EINTlist=NULL;
+	_len_EINT=0;
 	_FLAG_ener=false;
 	_FLAG_rg2=false;
 	stat_i=0; stat_j=0; stat_k=0; stat_size=0; stat_head=0; stat_tail=0; 
 	stat_com_x=NULL; stat_com_y=NULL; stat_com_z=NULL; tempnum=0.0;
 	_SIZE_memo=0;
 	_IFVERBOSE=false;
+	_ACCINDEX=1000;
 
 	_NUM_replicas=0;
 	_T_rep_eachrep=NULL;      // each replica
@@ -119,7 +122,12 @@ cmc::cmc() {
 	_E_lowest=0.0;    //       -20
 	_E_interval=0.0;  //        0.04
 	_E_highest=0.0;
-	_E_totalnum=0.0;  //        5000
+	_E_totalnum=0;  //        5000
+
+	_EINT_lowest=0.0;    //       -20
+	_EINT_interval=0.0;  //        0.04
+	_EINT_highest=0.0;
+	_EINT_totalnum=0;  //        5000
 	
 	_RG_lowest=0.0;    //       -20
 	_RG_interval=0.0;  //        0.04
@@ -215,6 +223,8 @@ void cmc::memo_allocation() {
 	_ENER_DH_chosenatom_backup_3=0.0;
 	_ENER_DH_chosenatom_backup_4=0.0;
 
+	
+
 	//_Series_eachain=new int*[_NUM_chains];
 
 	_DIS2_eachatom.Build(_SIZE_memo,_SIZE_memo);
@@ -260,6 +270,12 @@ void cmc::memo_allocation() {
 	_RG2_y_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 	_RG2_z_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);*/
 	_RG2_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
+
+	if(_len_EINT>0) { 
+		_EINT_stat.Build(_E_totalnum, _EINT_totalnum);
+		_EINT_stat_tot.Build(_E_totalnum, _EINT_totalnum);
+	}
+
 	_ENERLJ_stat.Build((_NUM_chains+1)*_NUM_chains/2, _E_totalnum);
 	_ENERBF_stat.Build(_NUM_chains, _E_totalnum);
 	_ENERAG_stat.Build(_NUM_chains, _E_totalnum);
@@ -335,11 +351,15 @@ void cmc::memo_allocation() {
 	_PHIZERO_sin.Build(_NUM_residues, _NUM_residues);
 
 	_EPSILON_eachres.Build(_NUM_residues, _NUM_residues);
+	_LAMBDA_eachres.Build(_NUM_residues, _NUM_residues);
+	_PPTYPE_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA_eachres.Build(_NUM_residues, _NUM_residues);
+	_SIGMA2_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA3_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA6_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA9_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA12_eachres.Build(_NUM_residues, _NUM_residues);
+	_SIGMA24_eachres.Build(_NUM_residues, _NUM_residues);
 	_E_cut_RR_eachres.Build(_NUM_residues, _NUM_residues);
 	_R_cut_RR_eachres.Build(_NUM_residues, _NUM_residues);
 
@@ -439,6 +459,11 @@ void cmc::memo_setzero() {
 	_RG2_y_stat_tot.SetZero();
 	_RG2_z_stat_tot.SetZero();*/
 	_RG2_stat_tot.SetZero();
+
+	if(_len_EINT>0) {	
+		_EINT_stat.SetZero();
+		_EINT_stat_tot.SetZero();
+	}
 		
 	MEMOSETZERO(_ENER_delta_LJ_inter, sizeof(double)*_NUM_chains);
 	MEMOSETZERO(tempElj, sizeof(double)*(_NUM_chains+1)*_NUM_chains/2);
@@ -508,11 +533,15 @@ void cmc::memo_setzero() {
 	_PHIZERO_sin.SetZero();
 
 	_EPSILON_eachres.SetZero();
+	_LAMBDA_eachres.SetZero();
+	_PPTYPE_eachres.SetZero();
 	_SIGMA_eachres.SetZero();
+	_SIGMA2_eachres.SetZero();
 	_SIGMA3_eachres.SetZero();
 	_SIGMA6_eachres.SetZero();
 	_SIGMA9_eachres.SetZero();
 	_SIGMA12_eachres.SetZero();
+	_SIGMA24_eachres.SetZero();
 	_E_cut_RR_eachres.SetZero();
 	_R_cut_RR_eachres.SetZero();
 
@@ -754,6 +783,9 @@ void cmc::memo_evaluation() {
 	for(i=0; i<_NUM_chains; i++){
 		_CINDEXMAP[i][i]=num++;
 	}
+	if(_len_EINT>0) {
+		_EINT_index=_CINDEXMAP[_EINTlist[0]][_EINTlist[1]];
+	}
 	if(_PROC_ID==0) {
 		for(i=0; i<_NUM_chains; i++){
 			for(j=0; j<i; j++){
@@ -920,6 +952,12 @@ void cmc::memo_free() {
 		delete[] _OPlist;
 		_OPlist=NULL;
 	}
+	if(_len_EINT>0) {
+		delete[] _EINTlist;
+		_EINTlist=NULL;
+		_EINT_stat.Release();
+		_EINT_stat_tot.Release();
+	}
 	delete[] _COM_x;
 	delete[] _COM_y;
 	delete[] _COM_z;
@@ -947,7 +985,12 @@ void cmc::memo_free() {
 	delete[] stat_com_z;
 	stat_com_z=NULL;
 	
-	
+	if(_ACCINDEX==0) { 
+		//_EBF_ACC.Release();
+		_ELJ_ACC.Release();
+		//_BF_interval.Release();
+		_LJ_interval.Release();
+	}
 	for(int i=0; i<_NUM_chains; i++){
 		delete[] _CINDEXMAP[i];
 	}
@@ -1074,11 +1117,15 @@ void cmc::memo_free() {
 	_PHIZERO_sin.Release();
 
 	_EPSILON_eachres.Release();
+	_LAMBDA_eachres.Release();
+	_PPTYPE_eachres.Release();
 	_SIGMA_eachres.Release();
+	_SIGMA2_eachres.Release();
 	_SIGMA3_eachres.Release();
 	_SIGMA6_eachres.Release();
 	_SIGMA9_eachres.Release();
 	_SIGMA12_eachres.Release();
+	_SIGMA24_eachres.Release();
 	_E_cut_RR_eachres.Release();
 	_R_cut_RR_eachres.Release();
 
@@ -1131,6 +1178,8 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_FLAG_ener"), _FLAG_ener);
 			readparameter(tempstr, string("_FLAG_rg2"), _FLAG_rg2);
 
+			readparameter(tempstr, string("_ACCINDEX"), _ACCINDEX);
+
 			readparameter(tempstr, string("_NUM_replicas"), _NUM_replicas);
 			readparameter(tempstr, string("_RUNTIMES_eachstep"), _RUNTIMES_eachstep);
 			readparameter(tempstr, string("_RUNTIMES_totalnum"), _RUNTIMES_totalnum);
@@ -1145,6 +1194,9 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_RG_lowest"), _RG_lowest);
 			readparameter(tempstr, string("_RG_interval"), _RG_interval);
 			readparameter(tempstr, string("_RG_totalnum"), _RG_totalnum);
+			readparameter(tempstr, string("_EINT_lowest"), _EINT_lowest);
+			readparameter(tempstr, string("_EINT_interval"), _EINT_interval);
+			readparameter(tempstr, string("_EINT_totalnum"), _EINT_totalnum);
 			//readparameter(tempstr, string("_MPI_OR_NOT"), _MPI_OR_NOT);
 			if( tempvec[0] == string("_OPlist") ) {
 				cout<<" oplist: ";
@@ -1155,6 +1207,22 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 				for(int i=0; i<_len_OP; i++) {
 					_OPlist[i]=atoi(tempvec[i+1].c_str());
 					cout<<_OPlist[i]<<" ";
+				}
+				cout<<endl;
+			}
+			if( tempvec[0] == string("_EINTlist") ) {
+				cout<<" _EINTlist: ";
+				_len_EINT=tempvec.size()-1;
+				if(_len_EINT>2) {
+					cout<<"_EINTlist now supports only Eint between 2 chains;"<<endl;
+					exit(LOGICERROR);
+				}
+				if(_len_EINT!=0) {
+					_EINTlist=new int[_len_EINT];
+				}
+				for(int i=0; i<_len_EINT; i++) {
+					_EINTlist[i]=atoi(tempvec[i+1].c_str())-1;
+					cout<<_EINTlist[i]<<" ";
 				}
 				cout<<endl;
 			}
@@ -1237,12 +1305,21 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 	}
 	_E_highest=_E_lowest+_E_interval*_E_totalnum;
 	_RG_highest=_RG_lowest+_RG_interval*_RG_totalnum;
+	if(_len_EINT>0) {
+		_EINT_highest=_EINT_lowest+_EINT_interval*_EINT_totalnum;
+	}
 	if(_IFVERBOSE) {
 
 		cout<<setw(30)<<" ::_FFPARA_FN: "<<_FFPARA_FN<<endl;
 		cout<<setw(30)<<" ::_NEIGHBOR_lj: "<<_NEIGHBOR_lj<<endl;
+		//cout<<setw(30)<<" ::_FLAG_ener: "<<_FLAG_ener<<endl;
 		cout<<setw(30)<<" ::_FLAG_ener: "<<_FLAG_ener<<endl;
 		cout<<setw(30)<<" ::_FLAG_rg2: "<<_FLAG_rg2<<endl;
+		//_ACCINDEX_bf=sqrt(_ACCINDEX);
+		//_ACCINDEX_ag=_ACCINDEX/2.0;
+		cout<<setw(30)<<" ::_ACCINDEX: "<<_ACCINDEX<<endl;
+		//cout<<setw(30)<<" ::_ACCINDEX_ag: "<<_ACCINDEX_ag<<endl;
+		//cout<<setw(30)<<" ::_ACCINDEX_bf: "<<_ACCINDEX_bf<<endl;
 
 		cout<<setw(30)<<" ::_NUM_replicas: "<<_NUM_replicas<<endl;
 		cout<<setw(30)<<" ::_RUNTIMES_eachstep: "<<_RUNTIMES_eachstep<<endl;
@@ -1261,6 +1338,10 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 		cout<<setw(30)<<" ::_E_interval: "<<_E_interval<<endl;
 		cout<<setw(30)<<" ::_E_highest: "<<_E_highest<<endl;
 		cout<<setw(30)<<" ::_E_totalnum: "<<_E_totalnum<<endl;
+		cout<<setw(30)<<" ::_EINT_lowest: "<<_EINT_lowest<<endl;
+		cout<<setw(30)<<" ::_EINT_interval: "<<_EINT_interval<<endl;
+		cout<<setw(30)<<" ::_EINT_highest: "<<_EINT_highest<<endl;
+		cout<<setw(30)<<" ::_EINT_totalnum: "<<_EINT_totalnum<<endl;
 		cout<<setw(30)<<" ::_RG_lowest: "<<_RG_lowest<<endl;
 		cout<<setw(30)<<" ::_RG_interval: "<<_RG_interval<<endl;
 		cout<<setw(30)<<" ::_RG_highest: "<<_RG_highest<<endl;
@@ -1327,6 +1408,11 @@ void cmc::write_parameters(const string FILENAME_para) {
 	writeparameter(para_ofstream, string("_FFPARA_FN"), _FFPARA_FN);
 	writeparameter(para_ofstream, string("_NEIGHBOR_lj"), _NEIGHBOR_lj);
 	writeparameter(para_ofstream, string("_FLAG_ener"), _FLAG_ener);
+
+	writeparameter(para_ofstream, string("_ACCINDEX"), _ACCINDEX);
+	//writeparameter(para_ofstream, string("_ACCINDEX_ag"), _ACCINDEX_ag);
+	//writeparameter(para_ofstream, string("_ACCINDEX_bf"), _ACCINDEX_bf);
+
 	writeparameter(para_ofstream, string("_FLAG_rg2"), _FLAG_rg2);
 	para_ofstream<<" _OPlist ";
 	int i=0;
@@ -1344,6 +1430,26 @@ void cmc::write_parameters(const string FILENAME_para) {
 	for(i=1; i<=tempN; i++) {
 		for(j=i; j<=tempN; j++) {
 			para_ofstream<<" GroupPair["<<setw(3)<<tempa++<<"] : G"<<i<<"-G"<<j<<endl;
+		}
+	}
+	if(_len_EINT>0) {
+		para_ofstream<<" _EINTlist ";
+		i=0;
+		for(i=0; i<_len_EINT; i++) {
+			para_ofstream<<_EINTlist[i]<<" ";
+		}
+		para_ofstream<<endl;
+		for(i=0; i<(_len_EINT/2); i++) {
+			para_ofstream<<" EINT["<<setw(3)<<i+1<<"] : "<<_EINTlist[2*i]<<"-"<<_EINTlist[2*i+1]<<endl;
+		}
+		tempN=_len_EINT/2;
+		//int tempnum=(tempN+1)*tempN/2;
+		j=0;
+		tempa=1;
+		for(i=1; i<=tempN; i++) {
+			for(j=i; j<=tempN; j++) {
+				para_ofstream<<" EINTPair["<<setw(3)<<tempa++<<"] : G"<<i<<"-G"<<j<<endl;
+			}
 		}
 	}
 	//writeparameter(para_ofstream, string("_NUM_replica"), _NUM_replica);
@@ -1375,6 +1481,11 @@ void cmc::write_parameters(const string FILENAME_para) {
 	writeparameter(para_ofstream, string("_E_interval"), _E_interval);
 	writeparameter(para_ofstream, string("_E_highest"), _E_highest);
 	writeparameter(para_ofstream, string("_E_totalnum"), _E_totalnum);
+
+	writeparameter(para_ofstream, string("_EINT_lowest"), _EINT_lowest);
+	writeparameter(para_ofstream, string("_EINT_interval"), _EINT_interval);
+	writeparameter(para_ofstream, string("_EINT_highest"), _EINT_highest);
+	writeparameter(para_ofstream, string("_EINT_totalnum"), _EINT_totalnum);
 	
 	//_RG_totalnum=int(double(_RG_totalnum)/double(_NUM_chains)/double(_NUM_chains));
 	_RG_interval=(_RG_highest-_RG_lowest)/_RG_totalnum;
@@ -1428,17 +1539,28 @@ void cmc::broadcast_parameters() {
 
 	MPI_Bcast(&_NEIGHBOR_lj, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_FLAG_ener, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_ACCINDEX, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	//MPI_Bcast(&_ACCINDEX_ag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	//MPI_Bcast(&_ACCINDEX_bf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_FLAG_rg2, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_OP, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_len_EINT, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	if(_PROC_ID!=0) {
 		if(_len_OP!=0) {
 			_OPlist=new int[_len_OP];
 		}
+		if(_len_EINT!=0) {
+			_EINTlist=new int[_len_EINT];
+		}
 	}
 	
 	MPI_Bcast(_OPlist, _len_OP, MPI_INT, 0, MPI_COMM_WORLD);
 	_len_OP=_len_OP/2;
+	if(_len_EINT>0) {
+		MPI_Bcast(_EINTlist, _len_EINT, MPI_INT, 0, MPI_COMM_WORLD);
+		_len_EINT=_len_EINT/2;
+	}
 	int i=0; 
 	int j=0;
 	bool tempflag=false;
@@ -1483,6 +1605,11 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_E_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_E_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_E_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+	MPI_Bcast(&_EINT_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_EINT_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_EINT_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_EINT_totalnum, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	
 	MPI_Bcast(&_RG_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_RG_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -1497,7 +1624,9 @@ void cmc::broadcast_parameters() {
 	}
 }
 ////////////////////////////////
-void cmc::init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf) {
+void cmc::init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf,
+	const double xorigin, const double yorigin, const double zorigin) {
+	//const double xoffset, const double yoffset, const double zoffset) {
 	int i=0;
 	int j=0;
 	string AType=string("ATOM");
@@ -1520,16 +1649,19 @@ void cmc::init_conformation_a(const int NUM_atoms, const int NUM_chains, const d
 	int direction_y=1;
 	int direction_z=1;
 	for(i=0; i<NUM_chains; i++) {
-		AChn_Name_temp[0]=AChn_Name.c_str()[0]+1;
+		//xorigin+=xoffset;
+		AChn_Name_temp[0]=AChn_Name.c_str()[0];
 		AChn_Name_temp[1]='\0';
 		AChn_Name=string(AChn_Name_temp);
 		sprintf(ASpec_Name_temp, "%d", ASpec_Name++);
 		AResi_Index++;
+		AChn_Name_temp[0]=AChn_Name.c_str()[0]+1;
+		AChn_Name_temp[1]='\0';
 		for(j=0; j<temp_atoms; j++) {
 			_system_.add_arbitrary_info(AType, j+i*temp_atoms+1, AChem_Name, string(ASpec_Name_temp), AResi_Name, AChn_Name, AResi_Index,
-										sqrt_3_d_2_BOND*dim_xx, //x
-										sqrt_1_d_2_BOND*(dim_xx%2+2*dim_yy), //y 
-										LEN_bond*dim_zz, 1.0, false); //z
+										sqrt_3_d_2_BOND*dim_xx+xorigin, //x
+										sqrt_1_d_2_BOND*(dim_xx%2+2*dim_yy)+yorigin, //y 
+										LEN_bond*dim_zz+zorigin, 1.0, false); //z
 			cout<<i+1<<":"<<j+1<<" dim_x: "<<dim_xx<<" dim_y: "<<dim_yy<<" dim_z: "<<dim_zz<<endl;
 			dim_xx+=direction_x;
 			if( dim_xx==dim || dim_xx==-1 ) {
@@ -1646,13 +1778,33 @@ void cmc::broadcast_epsilonsigma() {
 	MPI_Bcast(_PHIZERO_sin.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	MPI_Bcast(_EPSILON_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_LAMBDA_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_PPTYPE_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_SIGMA2_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA3_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA6_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA9_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA12_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_SIGMA24_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_E_cut_RR_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_R_cut_RR_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+	if(_ACCINDEX==0) {
+		return;
+	}
+	if(_PROC_ID) {
+		_ELJ_ACC.Build(_NUM_residues, _NUM_residues, _ACCINDEX);
+		_LJ_interval.Build(_NUM_residues, _NUM_residues);
+		_ELJ_ACC.SetZero();
+		_LJ_interval.SetZero();
+	}
+	//MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Bcast(_ELJ_ACC.pArray[0][0], _NUM_residues*_NUM_residues*_ACCINDEX, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	//MPI_Bcast(_EBF_ACC.pArray[0][0], _NUM_residues*_NUM_residues*_ACCINDEX_bf, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	
+	//MPI_Bcast(_BF_interval.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_LJ_interval.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	//MPI_Barrier(MPI_COMM_WORLD);
 	/*if(_PROC_ID!=0) {
 		tell_procid(); cout<<" _NUM_residues="<<_NUM_residues<<endl;
@@ -1683,7 +1835,75 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 	int xx=0;
 	int yy=0;
 	while( getline(ffpara_ifstream, tempstr) ) {
-		if( BFilter(tempstr)==string("[EPSILON]") ) {//start reading epsilon info;
+		if( BFilter(tempstr)==string("[PPTYPE]") ) {//start reading PPTYPE info;
+			cout<<" Loading pptype from file [ "<<_FFPARA_FN<<" ] ..."<<endl;
+			while( getline(ffpara_ifstream, tempstr) ) {
+				if(BFilter(tempstr)==string("[;PPTYPE]")) {
+					cout<<" PPTYPE loaded."<<endl;
+					break;
+				} else {
+					if( BFilter(tempstr).size()!=0 ) {//if a valid line;
+						tempvec=Split(BFilter(tempstr));
+						if(int(tempvec.size())<EP_SIG_Y) {// if info unsufficient...
+							cout<<" PPTYPE size wrong... "<<endl;
+							exit(LOGICERROR);
+						} else { // read info;
+							if(xx>=EP_SIG_X) { continue; }
+							for(yy=0; yy<EP_SIG_Y; yy++ ) {
+								_PPTYPE_eachres.pArray[xx][yy]=atof(tempvec[yy].c_str());
+								if(_IFVERBOSE) { 
+									cout<<setw(6)<<_PPTYPE_eachres.pArray[xx][yy]<<" ";
+								}
+							}
+							xx++;
+							if(_IFVERBOSE) cout<<endl;
+						}
+					} else {
+						continue; //read another line;
+					}
+				}
+			}
+			if(xx!=EP_SIG_X) {
+				cout<<" PPTYPE size wrong... "<<endl;
+				exit(LOGICERROR);
+			} else {
+				xx=0;
+			}
+		} else if( BFilter(tempstr)==string("[LAMBDA]") ) {//start reading LAMBDA info;
+			cout<<" Loading LAMBDA from file [ "<<_FFPARA_FN<<" ] ..."<<endl;
+			while( getline(ffpara_ifstream, tempstr) ) {
+				if(BFilter(tempstr)==string("[;LAMBDA]")) {
+					cout<<" LAMBDA loaded."<<endl;
+					break;
+				} else {
+					if( BFilter(tempstr).size()!=0 ) {//if a valid line;
+						tempvec=Split(BFilter(tempstr));
+						if(int(tempvec.size())<EP_SIG_Y) {// if info unsufficient...
+							cout<<" LAMBDA size wrong... "<<endl;
+							exit(LOGICERROR);
+						} else { // read info;
+							if(xx>=EP_SIG_X) { continue; }
+							for(yy=0; yy<EP_SIG_Y; yy++ ) {
+								_LAMBDA_eachres.pArray[xx][yy]=atof(tempvec[yy].c_str());
+								if(_IFVERBOSE) { 
+									cout<<setw(6)<<_LAMBDA_eachres.pArray[xx][yy]<<" ";
+								}
+							}
+							xx++;
+							if(_IFVERBOSE) cout<<endl;
+						}
+					} else {
+						continue; //read another line;
+					}
+				}
+			}
+			if(xx!=EP_SIG_X) {
+				cout<<" LAMBDA size wrong... "<<endl;
+				exit(LOGICERROR);
+			} else {
+				xx=0;
+			}
+		} else if( BFilter(tempstr)==string("[EPSILON]") ) {//start reading epsilon info;
 			cout<<" Loading epsilon from file [ "<<_FFPARA_FN<<" ] ..."<<endl;
 			while( getline(ffpara_ifstream, tempstr) ) {
 				if(BFilter(tempstr)==string("[;EPSILON]")) {
@@ -1767,7 +1987,11 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 							if(xx>=EP_SIG_X) { continue; }
 							for(yy=0; yy<EP_SIG_Y; yy++ ) {
 								if(tempvec[yy]==string("#")) {
-									_R_cut_RR_eachres.pArray[xx][yy]=pow(2.0,1.0/6.0)*_SIGMA_eachres.pArray[xx][yy];
+									if(_PPTYPE_eachres.pArray[xx][yy]==2) {
+										_R_cut_RR_eachres.pArray[xx][yy]=pow(2.0,1.0/6.0)*_SIGMA_eachres.pArray[xx][yy];
+									} else if(_PPTYPE_eachres.pArray[xx][yy]==4) {
+										_R_cut_RR_eachres.pArray[xx][yy]=pow(2.0,1.0/12.0)*_SIGMA_eachres.pArray[xx][yy];
+									} 
 								} else if(tempvec[yy]==string("@")) {
 									_R_cut_RR_eachres.pArray[xx][yy]=pow(_MAX_DOUBLE, 1.0/12.0);
 								} else {
@@ -2048,15 +2272,19 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			_RMIN.pArray[xx][yy]=_BOND_length.pArray[xx][yy]-_BOND_delta.pArray[xx][yy];
 			_RMAX.pArray[xx][yy]=_BOND_length.pArray[xx][yy]+_BOND_delta.pArray[xx][yy];
 			_DDELTA.pArray[xx][yy]=2.0*_BOND_delta.pArray[xx][yy];
-			_SIGMA3_eachres.pArray[xx][yy]=_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
+			_SIGMA2_eachres.pArray[xx][yy]=_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
+			_SIGMA3_eachres.pArray[xx][yy]=_SIGMA2_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
 			_SIGMA6_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA3_eachres.pArray[xx][yy];
 			_SIGMA9_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA6_eachres.pArray[xx][yy];
 			_SIGMA12_eachres.pArray[xx][yy]=_SIGMA6_eachres.pArray[xx][yy]*_SIGMA6_eachres.pArray[xx][yy];
+			_SIGMA24_eachres.pArray[xx][yy]=_SIGMA12_eachres.pArray[xx][yy]*_SIGMA12_eachres.pArray[xx][yy];
 			_R_cut_RR_eachres.pArray[xx][yy]=_R_cut_RR_eachres.pArray[xx][yy]*_R_cut_RR_eachres.pArray[xx][yy];
 			_DIS2=_R_cut_RR_eachres.pArray[xx][yy];
-			_DIS6=_DIS2*_DIS2*_DIS2;
-			_DIS12=_DIS6*_DIS6;
-			_E_cut_RR_eachres.pArray[xx][yy]=Energy_LJ(_EPSILON_eachres.pArray[xx][yy],_SIGMA12_eachres.pArray[xx][yy],_SIGMA6_eachres.pArray[xx][yy],_DIS12,_DIS6);
+			//_DIS6=_DIS2*_DIS2*_DIS2;
+			//_DIS12=_DIS6*_DIS6;
+			_E_cut_RR_eachres.pArray[xx][yy]=Energy_LJ(_PPTYPE_eachres.pArray[xx][yy], _LAMBDA_eachres.pArray[xx][yy], _EPSILON_eachres.pArray[xx][yy],
+				_SIGMA24_eachres.pArray[xx][yy], _SIGMA12_eachres.pArray[xx][yy], _SIGMA6_eachres.pArray[xx][yy],
+				_SIGMA2_eachres.pArray[xx][yy], _SIGMA_eachres.pArray[xx][yy], _DIS2);
 			//cout<<_E_cut_RR_eachres.pArray[xx][yy]<<endl;
 			
 			    //cout<<i<<" "<<j<<" succ!"<<endl;
@@ -2087,10 +2315,10 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 	double dis_inteval;
 	double t_dis;
 	double t_dis_2;
-	double t_dis_6;
-	double t_dis_12;
+	//double t_dis_6;
+	//double t_dis_12;
 	double t_ener;
-	double temp_sig6,temp_sig12;
+	double temp_sig6,temp_sig12,temp_sig2;;
 	//double temp_r6,temp_r12;
 	//int t_res=0;
 	string i_name;
@@ -2121,20 +2349,22 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			ofstream outener( i_name.c_str() );
 			sigma_max=4.0*_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y];
 			dis_inteval=sigma_max/num_inteval;
-			temp_sig6=_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]*_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y];
-			temp_sig6=temp_sig6*temp_sig6*temp_sig6;
+			temp_sig2=_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]*_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y];
+			temp_sig6=temp_sig2*temp_sig2*temp_sig2;
 			temp_sig12=temp_sig6*temp_sig6;
 			//temp_r6=_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y];
 			//temp_r12=temp_r6*temp_r6;
 			for(xx=1; xx<=num_inteval; xx++) {
 				t_dis=double(xx)*dis_inteval;
 				t_dis_2=t_dis*t_dis;
-				t_dis_6=t_dis_2*t_dis_2*t_dis_2;
-				t_dis_12=t_dis_6*t_dis_6;
+				//t_dis_6=t_dis_2*t_dis_2*t_dis_2;
+				//t_dis_12=t_dis_6*t_dis_6;
 				t_ener=0.0;
 				if(t_dis_2<_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]) {
-					t_ener=Energy_LJ(_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],temp_sig12,temp_sig6,t_dis_12,t_dis_6)
-				    	  -_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_x];	
+					t_ener=Energy_LJ(_PPTYPE_eachres.pArray[ep_sig_x][ep_sig_y],_LAMBDA_eachres.pArray[ep_sig_x][ep_sig_y],
+						_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],
+						temp_sig12*temp_sig12,temp_sig12,temp_sig6,temp_sig2,_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y],t_dis_2)
+				    	  -_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y];	
 				}
 				outener<<t_dis<<"\t"<<t_ener<<"\n";
 			}
@@ -2146,6 +2376,67 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 	cout<<" [ ---------- gnuploting the potential profile ---------- ]"<<endl;
 	cout<<" [ NOTE ]: you can check your energy profile now... those .eps files. "<<endl;
 	cout<<" "<<endl;
+
+	if(_ACCINDEX==0) { return; }
+	
+	//_EAG_ACC.Build(EP_SIG_X, EP_SIG_Y, _ACCINDEX_ag);
+	//_EBF_ACC.Build(EP_SIG_X, EP_SIG_Y, _ACCINDEX_bf);
+	_ELJ_ACC.Build(EP_SIG_X, EP_SIG_Y, _ACCINDEX);
+	//_EDH_ACC.Build(EP_SIG_X, EP_SIG_Y, _ACCINDEX);
+	//_BF_interval.Build(EP_SIG_X, EP_SIG_Y);
+	_LJ_interval.Build(EP_SIG_X, EP_SIG_Y);
+	//_EAG_ACC.SetZero();
+	//_EBF_ACC.SetZero();
+	_ELJ_ACC.SetZero();
+	//_EDH_ACC.SetZero();
+	//_BF_interval.SetZero();
+	_LJ_interval.SetZero();
+	//_AG_interval=_PI_single/_ACCINDEX_ag;
+	//_DH_interval=_PI_double/_ACCINDEX;
+	
+	for(ep_sig_x=0; ep_sig_x<EP_SIG_X; ep_sig_x++) {
+		for(ep_sig_y=0; ep_sig_y<EP_SIG_Y; ep_sig_y++) {
+			//_BF_interval.pArray[ep_sig_x][ep_sig_y]=_DDELTA.pArray[ep_sig_x][ep_sig_y]/_ACCINDEX_bf; 
+			_LJ_interval.pArray[ep_sig_x][ep_sig_y]=_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]/_ACCINDEX;
+			
+			//1.LJ
+			for(xx=0; xx<_ACCINDEX; xx++) {
+				t_dis_2=(double(xx)+0.5)*_LJ_interval.pArray[ep_sig_x][ep_sig_y];				
+				_ELJ_ACC.pArray[ep_sig_x][ep_sig_y][xx]=Energy_LJ(
+					_PPTYPE_eachres.pArray[ep_sig_x][ep_sig_y],
+					_LAMBDA_eachres.pArray[ep_sig_x][ep_sig_y],
+					_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],
+					_SIGMA24_eachres.pArray[ep_sig_x][ep_sig_y],
+					_SIGMA12_eachres.pArray[ep_sig_x][ep_sig_y],
+					_SIGMA6_eachres.pArray[ep_sig_x][ep_sig_y],
+					_SIGMA2_eachres.pArray[ep_sig_x][ep_sig_y],
+					_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y],
+					t_dis_2)-_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y];	
+				
+			}
+			//.BF
+			/*for(xx=0; xx<_ACCINDEX_bf; xx++) {
+				t_dis=_RMIN.pArray[ep_sig_x][ep_sig_y]+(double(xx)+0.5)*_BF_interval.pArray[ep_sig_x][ep_sig_y];				
+				_EBF_ACC.pArray[ep_sig_x][ep_sig_y][xx]=Energy_BF(_PARA_KB.pArray[ep_sig_x][ep_sig_y], 
+					t_dis, _BOND_length.pArray[ep_sig_x][ep_sig_y]);
+				
+			}*/
+			//.AG
+			//for(xx=0; xx<_ACCINDEX_ag; xx++) {
+			//	t_dis=(double(xx)+0.5)*_AG_interval.pA;				
+				/*_EAG_ACC.pArray[ep_sig_x][ep_sig_y][xx]=Energy_AG(_PARA_KB.pArray[ep_sig_x][ep_sig_y], 
+					t_dis, _BOND_length.pArray[ep_sig_x][ep_sig_y]);*/
+			//	_EAG_ACC.pArray[ep_sig_x][ep_sig_y][xx]=cos(xx);				
+			//}
+			//.DH
+			//for(xx=0; xx<_ACCINDEX; xx++) {
+			//	t_dis=(double(xx)+0.5)*_PI_;				
+				/*_EAG_ACC.pArray[ep_sig_x][ep_sig_y][xx]=Energy_AG(_PARA_KB.pArray[ep_sig_x][ep_sig_y], 
+					t_dis, _BOND_length.pArray[ep_sig_x][ep_sig_y]);*/
+			//	_EAG_ACC.pArray[ep_sig_x][ep_sig_y][xx]=cos(xx);				
+			//}
+		}
+	}
 }
 ///////////////////////////
 ///////////////////////////
@@ -2383,6 +2674,7 @@ void cmc::make_choice(const int INDEX_coor) {
 	_ZZ[0]=_ZZ[_INDEX_chosen];
 	//calc_energy_chosen_atom();// not necessary any more in this detailed energy edition !!!!!!!!!!!!!!!!!
 	int i;
+	//#pragma ompparallel for
 	for(i=1; i<_SIZE_memo; i++) {
 		_ENER_LJ_chosenatom_backup[i]=_ENER_LJ_eachatom.pArray[_INDEX_chosen][i];
 		_DIS2_chosenatom_backup[i]=_DIS2_eachatom.pArray[_INDEX_chosen][i];
@@ -2453,6 +2745,7 @@ void cmc::make_judge() {
 			//cout<<" Eintra["<<_INDEX_chn_ind<<"]="<<_ENER_delta_LJ_intra<<" @ make_judge() "<<endl;
 		}
 	}*/
+	//#pragma ompparallel for
 	for(j=_INDEX_chnhead; j<_INDEX_chntail; j++) {
 		_ENER_delta_LJ_intra+=_ENER_LJ_eachatom.pArray[_INDEX_chosen][j]-_ENER_LJ_chosenatom_backup[j];
 	}
@@ -2460,6 +2753,7 @@ void cmc::make_judge() {
 	for(i=0;i<_INDEX_chn_ind;i++) {
 		k=_INDEX_CHN_HEAD[i];
 		l=_INDEX_CHN_TAIL[i];	
+		//#pragma ompparallel for
 		for(j=k; j<=l; j++) {
 			_ENER_delta_LJ_inter[i]+=_ENER_LJ_eachatom.pArray[_INDEX_chosen][j]-_ENER_LJ_chosenatom_backup[j];
 		}
@@ -2469,6 +2763,7 @@ void cmc::make_judge() {
 	for(i=_INDEX_chn_ind+1;i<_NUM_chains;i++) {
 		k=_INDEX_CHN_HEAD[i];
 		l=_INDEX_CHN_TAIL[i];	
+		//#pragma ompparallel for
 		for(j=k; j<=l; j++) {
 			_ENER_delta_LJ_inter[i]+=_ENER_LJ_eachatom.pArray[_INDEX_chosen][j]-_ENER_LJ_chosenatom_backup[j];
 		}
@@ -2529,6 +2824,7 @@ void cmc::make_accept() {
 		//cout<<_ENER_ele_old/_ENER_total<<endl;//for test!
 	}*/
 	int i;
+	//#pragma ompparallel for
 	for(i=1; i<_SIZE_memo; i++) {
 		_ENER_LJ_eachatom.pArray[i][_INDEX_chosen]=_ENER_LJ_eachatom.pArray[_INDEX_chosen][i];
 		_DIS2_eachatom.pArray[i][_INDEX_chosen]=_DIS2_eachatom.pArray[_INDEX_chosen][i];
@@ -2609,7 +2905,7 @@ void cmc::make_reject_all()
 	{
 		_ENER_ele_new=_ENER_ele_old;
 	}*/
-	
+	//#pragma ompparallel for
 	for(i=1; i<_SIZE_memo; i++) {
 		_ENER_LJ_eachatom.pArray[_INDEX_chosen][i]=_ENER_LJ_chosenatom_backup[i];
 		_DIS2_eachatom.pArray[_INDEX_chosen][i]=_DIS2_chosenatom_backup[i];
@@ -2855,6 +3151,7 @@ void cmc::calc_energy_chosen_atom() {
 				                               +_DIS_y_eachatom.pArray[_INDEX_chosen][k]*_DIS_y_eachatom.pArray[_INDEX_chosen][k]
 				                               +_DIS_z_eachatom.pArray[_INDEX_chosen][k]*_DIS_z_eachatom.pArray[_INDEX_chosen][k];				
 	}*/
+	//#pragma ompparallel for                           
 	for(k=1;k<_INDEX_chosen;k++) {//good!! for every update, never miss one coordinate.
 		_DIS_x_eachatom.pArray[_INDEX_chosen][k]=DIS_PBC_X(_XX[_INDEX_chosen],_XX[k]);
 		_DIS_y_eachatom.pArray[_INDEX_chosen][k]=DIS_PBC_Y(_YY[_INDEX_chosen],_YY[k]);
@@ -2868,6 +3165,7 @@ void cmc::calc_energy_chosen_atom() {
 		    <<_ZZ[_INDEX_chosen]<<"-"<<_ZZ[k]<<"="<<_DIS_z_eachatom.pArray[_INDEX_chosen][k]<<" "
 		    <<_DIS2_eachatom.pArray[_INDEX_chosen][k]<<endl;	*/	                               			
 	}
+	//#pragma ompparallel for
 	for(k=_INDEX_chosen+1;k<_SIZE_memo;k++) {//good!! for every update, never miss one coordinate.
 		_DIS_x_eachatom.pArray[_INDEX_chosen][k]=DIS_PBC_X(_XX[_INDEX_chosen],_XX[k]);
 		_DIS_y_eachatom.pArray[_INDEX_chosen][k]=DIS_PBC_Y(_YY[_INDEX_chosen],_YY[k]);
@@ -2887,28 +3185,28 @@ void cmc::calc_energy_chosen_atom() {
 			if( _TYPE_atom_ind_real == -1 ) { //the start(-1) or the end(1) of the chain
 				tempind=_INDEX_chosen+1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
-				_DIS=sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind])-_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]];
-				_DIS2=_DIS*_DIS;
-				_ENER_BF_eachatom[_INDEX_chosen]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],_DIS2);
+				_ENER_BF_eachatom[_INDEX_chosen]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]], 
+					sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind]), 
+					_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 				//enumer++;
 			} else if (_TYPE_atom_ind_real == 1) { 
 				tempind=_INDEX_chosen-1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
-				_DIS=sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind])-_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]];
-				_DIS2=_DIS*_DIS;
-				_ENER_BF_eachatom[tempind]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],_DIS2);
+				_ENER_BF_eachatom[tempind]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
+					sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind]),
+					_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 		    } else {
 				tempind=_INDEX_chosen+1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
-				_DIS=sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind])-_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]];
-				_DIS2=_DIS*_DIS;
-				_ENER_BF_eachatom[_INDEX_chosen]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],_DIS2);
+				_ENER_BF_eachatom[_INDEX_chosen]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
+					sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind]),
+					_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 				
 				tempind=_INDEX_chosen-1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
-				_DIS=sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind])-_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]];
-				_DIS2=_DIS*_DIS;
-				_ENER_BF_eachatom[tempind]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],_DIS2);
+				_ENER_BF_eachatom[tempind]=Energy_BF(_PARA_KB.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
+					sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][tempind]),
+					_BOND_length.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 			}
 		}
 		//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
@@ -3117,6 +3415,7 @@ void cmc::calc_energy_chosen_atom() {
 	} else { // if not chain, L-J potential calculation between "neighboring atoms";
 		//if( _SIZE_of_chosen_chn > 1 ) { // 2 atoms or more;
 
+		////#pragma ompparallel for
 		for(k=_Index_lneighbor_ind_real; k<_INDEX_chosen; k++) {
 			//cout<<" here1, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3143,15 +3442,27 @@ void cmc::calc_energy_chosen_atom() {
 			}*/
 			
 			_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-			_DIS6=TRIPLE(_DIS2);
-			_DIS12=_DIS6*_DIS6; 
+			//_DIS6=_DIS2*_DIS2*_DIS2;
+			//_DIS12=_DIS6*_DIS6; 
 			if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=
-					Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				if(_ACCINDEX>0) { 
+					index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+					_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+				} else {
+					_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=
+					Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+							  _LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+							  _EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+							  _SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+							  _SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
 						      _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
-						      _DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+						      _SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+						      _SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+						      _DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+				}
 			}
 		}
+		////#pragma ompparallel for
 		for(k=_INDEX_chosen+1; k<_Index_rneighbor_ind_real; k++) {
 			//cout<<" here2, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3175,10 +3486,22 @@ void cmc::calc_energy_chosen_atom() {
 			}*/
 						
 			_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-			_DIS6=TRIPLE(_DIS2);
-			_DIS12=_DIS6*_DIS6;
+			//_DIS6=_DIS2*_DIS2*_DIS2;
+			//_DIS12=_DIS6*_DIS6;
 			if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+				if(_ACCINDEX>0) { 
+					index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+					_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+				} else {
+					_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+					_SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+				}
 			}
 		}
 		//}
@@ -3186,6 +3509,7 @@ void cmc::calc_energy_chosen_atom() {
 
     //Lennard-Jones Potential Part;  inter chain;
 	//cout<<" [k:";
+	//#pragma ompparallel for
 	for(k=1; k<_INDEX_chnhead_real; k++) {// must be '<', attention! 
 		//cout<<" here3, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 		_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3210,14 +3534,27 @@ void cmc::calc_energy_chosen_atom() {
 		}*/
 
 		_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-		_DIS6=TRIPLE(_DIS2);
-		_DIS12=_DIS6*_DIS6;
+		//_DIS6=_DIS2*_DIS2*_DIS2;
+		//_DIS12=_DIS6*_DIS6;
 
 		if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			if(_ACCINDEX>0) { 
+				index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+			} else {
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			}
 		}
 	}
 	// intra chain but not neighbor
+	//#pragma ompparallel for
 	for(k=_INDEX_chnhead_real; k<_Index_lneighbor_ind_real; k++) {// must be '<', attention! 
 		//cout<<" here3, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 		_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3249,15 +3586,28 @@ void cmc::calc_energy_chosen_atom() {
 			_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
 		}*/
 		_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-		_DIS6=TRIPLE(_DIS2);
-		_DIS12=_DIS6*_DIS6;
+		//_DIS6=_DIS2*_DIS2*_DIS2;
+		//_DIS12=_DIS6*_DIS6;
 
 		if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			if(_ACCINDEX>0) { 
+				index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+			} else {
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			}
 		}
 	}
 	//cout<<" ("<<_INDEX_chosen<<")";
 	// intra chain but not neighbor
+	//#pragma ompparallel for
 	for(k=_Index_rneighbor_ind_real; k<_INDEX_chntail_real; k++) {// must be '<', attention! 
 		//cout<<" here4, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 		_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3289,14 +3639,27 @@ void cmc::calc_energy_chosen_atom() {
 			_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
 		}*/
 		_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-		_DIS6=TRIPLE(_DIS2);
-		_DIS12=_DIS6*_DIS6;
+		//_DIS6=_DIS2*_DIS2*_DIS2;
+		//_DIS12=_DIS6*_DIS6;
 		if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			if(_ACCINDEX>0) { 
+				index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+			} else {
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			}
 		}
 	}
 
 	//inter chain
+	//#pragma ompparallel for
 	for(k=_INDEX_chntail_real; k<_SIZE_memo; k++) {// must be '<', attention! 
 		//cout<<" here4, _INDEX_chosen="<<_INDEX_chosen<<"; k="<<k<<endl;
 		_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]=0.0;
@@ -3320,10 +3683,22 @@ void cmc::calc_energy_chosen_atom() {
 		}*/
 
 		_DIS2=_DIS2_eachatom.pArray[_INDEX_chosen][k];
-		_DIS6=TRIPLE(_DIS2);
-		_DIS12=_DIS6*_DIS6;
+		//_DIS6=_DIS2*_DIS2*_DIS2;
+		//_DIS12=_DIS6*_DIS6;
 		if(_DIS2<_R_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]]) {
-			_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			if(_ACCINDEX>0) { 
+				index_lj=int(_DIS2/_LJ_interval.pArray[_Res_chosen][_INDEX_RES_ATM[k]]);
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=_ELJ_ACC.pArray[_Res_chosen][_INDEX_RES_ATM[k]][index_lj];
+			} else {
+				_ENER_LJ_eachatom.pArray[_INDEX_chosen][k]+=Energy_LJ(_PPTYPE_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA24_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA12_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],
+				_SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]],_DIS2)-_E_cut_RR_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[k]];
+			}
 		}
 	}
 	//cout<<"]"<<endl;
@@ -3383,9 +3758,9 @@ double cmc::calc_energy() {                       //the total energy;
 					tempind_y=index_atm+j+1;
 					if(tempind_x>=_INDEX_CHN_TAIL_real[i]) { break; }
 					//cout<<tempind_x<<":"<<tempind_y<<endl;
-				    _DIS=sqrt(_DIS2_eachatom.pArray[tempind_x][tempind_y])-_BOND_length.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
-					_DIS2=_DIS*_DIS;
-					_ENER_total+=Energy_BF(_PARA_KB.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_DIS2);
+					_ENER_total+=Energy_BF(_PARA_KB.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+						sqrt(_DIS2_eachatom.pArray[tempind_x][tempind_y]),
+						_BOND_length.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
 					//enumer++;
 					//cout<<index_atm+j<<"<->"<<index_atm+j+1<<endl;
 				}
@@ -3465,14 +3840,23 @@ double cmc::calc_energy() {                       //the total energy;
 					}*/
 					
 					_DIS2=_DIS2_eachatom.pArray[tempind_x][tempind_y];
-					_DIS6=TRIPLE(_DIS2);
-					_DIS12=_DIS6*_DIS6;
+					//_DIS6=_DIS2*_DIS2*_DIS2;
+					//_DIS12=_DIS6*_DIS6;
 					if(_DIS2<_R_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]) {
-						_ENER_total+=Energy_LJ(_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+						if(_ACCINDEX>0) { 
+							index_lj=int(_DIS2/_LJ_interval.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
+							_ENER_total+=_ELJ_ACC.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]][index_lj];
+						} else {
+							_ENER_total+=Energy_LJ(_PPTYPE_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_LAMBDA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							                   _SIGMA24_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
 							                   _SIGMA12_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
 							                   _SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
-							                   _DIS12,
-							                   _DIS6)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+							                   _SIGMA2_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							                   _SIGMA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							                   _DIS2)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+						}
 					}
 					//enumer++;
 				}
@@ -3522,10 +3906,22 @@ double cmc::calc_energy() {                       //the total energy;
 				}*/
 				//mcout<<tempind_x<<":"<<tempind_y<<" "<<sqrt(_DIS2)<<" v.s. "<<sqrt(_DIS2_eachatom.pArray[tempind_x][tempind_y])<<endl;
 				_DIS2=_DIS2_eachatom.pArray[tempind_x][tempind_y];
-				_DIS6=TRIPLE(_DIS2); 
-				_DIS12=_DIS6*_DIS6;
+				//_DIS6=_DIS2*_DIS2*_DIS2; 
+				//_DIS12=_DIS6*_DIS6;
 				if(_DIS2<_R_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]) {
-					_ENER_total+=Energy_LJ(_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_SIGMA12_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+						if(_ACCINDEX>0) { 
+							index_lj=int(_DIS2/_LJ_interval.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
+							_ENER_total+=_ELJ_ACC.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]][index_lj];
+						} else {
+							_ENER_total+=Energy_LJ(_PPTYPE_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_LAMBDA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_SIGMA24_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_SIGMA12_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_SIGMA2_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+							_SIGMA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_DIS2)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+					}
 				}
 				//enumer++;
 				//cout<<index_atm+j<<"<->"<<index_atm+k<<":"<<endl;
@@ -3571,10 +3967,22 @@ double cmc::calc_energy() {                       //the total energy;
 						continue;
 					} else {
 						_DIS2=_DIS2_eachatom.pArray[tempind_x][tempind_y];
-						_DIS6=TRIPLE(_DIS2);
-						_DIS12=_DIS6*_DIS6;
+						//_DIS6=_DIS2*_DIS2*_DIS2;
+						//_DIS12=_DIS6*_DIS6;
 						if(_DIS2<_R_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]) {
-							_ENER_total+=Energy_LJ(_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_SIGMA12_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_DIS12,_DIS6)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+							if(_ACCINDEX>0) { 
+								index_lj=int(_DIS2/_LJ_interval.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
+								_ENER_total+=_ELJ_ACC.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]][index_lj];
+							} else {
+								_ENER_total+=Energy_LJ(_PPTYPE_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_LAMBDA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_SIGMA24_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_SIGMA12_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_SIGMA2_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
+								_SIGMA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],_DIS2)-_E_cut_RR_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]];
+							}
 						}
 					}		
 					//enumer++;
@@ -4107,17 +4515,16 @@ inline void cmc::statistic() { //every step!!
 		if(_FLAG_ener) {
 			for(stat_j=0; stat_j<=stat_i; stat_j++) {
 				_ENERLJ_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge]+=tempElj[_CINDEXMAP[stat_i][stat_j]];
-				//tell_procid(); cout<<" statistic() LJ over! "<<stat_i<<" "<<stat_j<<endl;	
 			}
 			if(_BF_flag) {
 				////add your code here;
 				_ENERBF_stat.pArray[stat_i][tempindex_judge]+=tempEbf[stat_i];
-				//tell_procid(); cout<<" statistic() BF over! "<<stat_i<<endl;	
+				//tell_procid(); cout<<" statistic() BF over! "<<stat_i<<endl;
 			}
 			if(_AG_flag) {
 				////add your code here;
 				_ENERAG_stat.pArray[stat_i][tempindex_judge]+=tempEag[stat_i];
-				//tell_procid(); cout<<" statistic() AG over! "<<stat_i<<endl;	
+				//tell_procid(); cout<<" statistic() AG over! "<<stat_i<<endl;
 			}
 			if(_DH_flag) {
 				////add your code here;
@@ -4212,20 +4619,22 @@ inline void cmc::statistic() { //every step!!
 				} else {
 					_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
 				}*/
-				if(stat_i==_INDEX_chn_ind) {
+				if(_RG_totalnum>1 && stat_i==_INDEX_chn_ind) {
 					//_RG2_ec[stat_i]=(_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size;
 					_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
 					//_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval); //slower;
 					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 						_indexRGSTAT[stat_i]=_RG_totalnum-1;
-					} else if (_indexRGSTAT[stat_i]<0) {
+					} /*else if (_indexRGSTAT[stat_i]<0) {//normally impossible since rg from 0.0.
 						_indexRGSTAT[stat_i]=0;
-					} /*else {
+					} *//*else {//unchanged index
 						_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
 					}*/
 					//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 				}
-				_RG2_stat.pArray[stat_i][tempindex_judge][_indexRGSTAT[stat_i]]+=1.0;
+				if(_RG_totalnum>1 ) {
+					_RG2_stat.pArray[stat_i][tempindex_judge][_indexRGSTAT[stat_i]]+=1.0;
+				}
 				_RG2_actual_x.pArray[stat_i][tempindex_judge]+=_RG2_x[stat_i];
 				_RG2_actual_y.pArray[stat_i][tempindex_judge]+=_RG2_y[stat_i];
 				_RG2_actual_z.pArray[stat_i][tempindex_judge]+=_RG2_z[stat_i];
@@ -4239,12 +4648,22 @@ inline void cmc::statistic() { //every step!!
 				tempindexstat=int((_DISSTAT[_CINDEXMAP[stat_i][stat_j]]-_DISSTAT_lowest)/_DISSTAT_interval);
 				if(tempindexstat>=_RG_totalnum) {
 					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][_RG_totalnum-1]+=1.0;
-				} else if (tempindexstat<0) {
+				} /*else if (tempindexstat<0) {
 					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][0]+=1.0;
-				} else {
+				} */else {
 					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][tempindexstat]+=1.0;
 				}
 			}	
+		}
+	}
+	if( _FLAG_ener && _len_EINT>0 ) { 
+		tempindexstat=int((tempElj[_EINT_index]-_EINT_lowest)/_EINT_interval);
+		if(tempindexstat>=_EINT_totalnum) {
+			_EINT_stat.pArray[tempindex_judge][_EINT_totalnum]+=1.0;
+		} else if(tempindexstat<0) {
+			_EINT_stat.pArray[tempindex_judge][0]+=1.0;
+		} else {
+			_EINT_stat.pArray[tempindex_judge][tempindexstat]+=1.0;
 		}
 	}
 	/*double tempEtot=0.0;
@@ -4279,6 +4698,9 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	//MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	if(_len_EINT>0) {
+		MPI_Reduce(_EINT_stat.pArray[0], _EINT_stat_tot.pArray[0], _E_totalnum*_EINT_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
 	MPI_Reduce(_RG2_actual_x.pArray[0], _RG2_actual_xtot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_actual_y.pArray[0], _RG2_actual_ytot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_actual_z.pArray[0], _RG2_actual_ztot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -4376,6 +4798,40 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			}
 		}
 	}//end of dis output;
+	if(_len_EINT>0) {
+		ofstream temposEINT_plot;
+		if(_FLAG_ener) {
+			sprintf(tempfilename, "eint%03d%03d_plot.dat", _EINTlist[0]+1, _EINTlist[1]+1);
+			cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_EINT_index<<" ;-) "<<endl;
+			temposEINT_plot.open(tempfilename);
+			cout<<" file "<<tempfilename<<" opened ."<<endl;
+			for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
+				tempNum_all=0.0;
+				tempSum_all=0.0;
+				for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
+					tempNum_all+=_EINT_stat_tot.pArray[stat_k][stat_l];
+					tempSum_all+=_EINT_stat_tot.pArray[stat_k][stat_l]*(_EINT_lowest+_EINT_interval*stat_l);
+				}
+				if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+					cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
+					exit(LOGICERROR);
+				}
+				for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
+					if( fabs(tempNum_all)>1e-6 ) {
+					   	temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
+					                  <<setw(8)<<double(_EINT_stat_tot.pArray[stat_k][stat_l])/double(tempNum_all)<<endl;
+					} else {
+					    temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
+					                  <<setw(8)<<0.0<<endl;
+					}
+				}
+				temposEINT_plot<<" "<<endl;
+			}
+			temposEINT_plot.close();
+		}
+	}//end of eint output;
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 		stat_size=_SIZE_of_chn[stat_i];
 		cout<<" now writing chn: "<<stat_i+1<<" sz: "<<stat_size<<endl;
@@ -4530,7 +4986,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 					/*if( fabs(_Probability_all[stat_k])-tempNum_x>1e-12 ||
 						tempNum_x!=tempNum_y || tempNum_x!=tempNum_z || tempNum_y!=tempNum_z ||
 						tempNum_x!=tempNum_all ) {*/
-					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+					if( _RG_totalnum>1 && fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
 						/*cout<<" something wrong: trgx="<<tempNum_x<<" trgy="<<tempNum_y<<" trgz="<<tempNum_z
 							<<" _Probability_all[stat_k]="<<" temp_all="<<tempNum_all<<endl;*/
 						cout<<" something wrong: _Probability_all="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
@@ -4641,6 +5097,12 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	if(system("cp range.gpl dismaprange.gpl")){};
 	sprintf(aptempa, "echo \"ymin=%f\" >> dismaprange.gpl", _DISSTAT_lowest);
 	sprintf(aptempb, "echo \"ymax=%f\" >> dismaprange.gpl", _DISSTAT_highest);
+	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
+	if(system(aptempa)){};
+	if(system(aptempb)){};
+
+	sprintf(aptempa, "echo \"cmin=%f\" >> rg2maprange.gpl", _EINT_lowest);
+	sprintf(aptempb, "echo \"cmax=%f\" >> rg2maprange.gpl", _EINT_highest);
 	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
 	if(system(aptempa)){};
 	if(system(aptempb)){};

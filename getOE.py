@@ -16,27 +16,27 @@ if len(sys.argv) < 4:
 filename=sys.argv[1]
 colid=int(sys.argv[2])
 valTemp=float(sys.argv[3])
-try:
-	tempfp=open("paraentropy.gpl", 'r')
-	print " loading information of column from: [paraentropy.gpl]"
-except IOError:
-	print " can not open file: [paraentropy.gpl]"
-	exit(-1)
+# try:
+# 	tempfp=open("paraentropy.gpl", 'r')
+# 	print " loading information of column from: [paraentropy.gpl]"
+# except IOError:
+# 	print " can not open file: [paraentropy.gpl]"
+# 	exit(-1)
 
-epsilon=1.0
-while True:
-	line=tempfp.readline().rstrip()
-	if line:
-		elements=line.split('=')
-		print "",elements
-		if len(elements)==2:
-			if elements[0].lstrip()=="epsilon":
-				epsilon=float(elements[1])
-				break
-	else:
-		break
-print " epsilon=%f" % (epsilon)
-tempfp.close()
+# epsilon=1.0
+# while True:
+# 	line=tempfp.readline().rstrip()
+# 	if line:
+# 		elements=line.split('=')
+# 		print "",elements
+# 		if len(elements)==2:
+# 			if elements[0].lstrip()=="epsilon":
+# 				epsilon=float(elements[1])
+# 				break
+# 	else:
+# 		break
+# print " epsilon=%f" % (epsilon)
+# tempfp.close()
 
 try:
 	fp=open("entropy.dat", 'r')

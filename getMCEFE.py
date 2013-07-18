@@ -106,7 +106,7 @@ print "         E ... ..."
 print "         EN TM feNM"
 
 #os.system("echo \"set xrange ["+str(ener[0])+":"+str(ener[listlen-1])+"]\" > range.gpl")
-os.system("echo \"set yrange ["+str(Tlow)+":"+str(Thigh)+"]\" >> range.gpl")
+os.system("echo \"set yrange ["+str(Tlow/epsilon)+":"+str(Thigh/epsilon)+"]\" >> range.gpl")
 os.system("gnuplot < draw_mcefe.gpl")
 print " please check [ mcefe.eps ]."
 os.system("convert -rotate 90 mcefe.eps mcefe.png")

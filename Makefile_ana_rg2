@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -O2
 #CFLAGS=-c
 LDFLAGS=
 SOURCES=ana_rg2.cpp ssbf.cpp 

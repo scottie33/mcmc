@@ -1,9 +1,3 @@
-get the source code:
-
- wget|axel https://github.com/scottie33/mcmc/archive/master.zip
- or just hit ./update.bash
-
-
 PDB input format:
 
 ATOM atomindex atomchemical atomspecial resname chainname resindex xcoor ycoor zcoor
@@ -21,8 +15,7 @@ you can use:
 newpdb.x [ make -f Makefile_newpdb ]
 
 Instruction: (anything in [] is optional, or say, your decision)
-1, ./makeall.bash
-*1, make clean
+1, make clean
    make
 2, _config.in [ _ffpara.pls ]
    [init].pdb
@@ -48,6 +41,7 @@ getPE.py
 6, getFE.py
 7, getrg2map.bash (just hit it to see what would happen)
 8, getoemap.bash (use the input of 7) 
+9, get2Dcemap.bash 
 
 pdb2psf.py
 makeTlist.py

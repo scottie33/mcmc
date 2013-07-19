@@ -32,7 +32,7 @@ set ztics font ",28" tc rgb "black"
 
 set mxtics 5
 
-set logscale y
+#set logscale y
 
 set grid mxtics mytics
 
@@ -41,7 +41,8 @@ set grid mxtics mytics
 set hidden3d
 #set cbrange [0:1]
 #set palette gray
-set palette rgbformulae 34,35,36
+set palette rgbformulae 22, 13, -31
+#set palette rgbformulae 34,35,36
 set pm3d at b interpolate 0,0   #set pm3d at bst
 #set xyplane -10.0
 #set view 45,30
@@ -55,8 +56,11 @@ set border 4095 lt 1 lw 3 lc rgb "black"
 #splot [-5:5.01] [-5:5.01] 'MCEFE.dat' u 1:2:3
 #splot 'MCEFE.dat' u 1:2:3 w l lt 1
 
-#set contour base
+set contour base
+set cntrparam levels 100
 #unset surface
+set xrange [emin/epsilon:emax/epsilon]
+set zrange [-500:500]
 
-splot 'MCEFE.dat' u 1:2:3 w pm3d title ztitle
+splot 'MCEFE.dat' u ($1/epsilon):($2/epsilon):3 w pm3d title ztitle
 

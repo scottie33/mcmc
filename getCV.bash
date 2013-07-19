@@ -49,6 +49,9 @@ cat _temperaturelist.pls | while read line; do
 	cat OET.dat >> CECV.dat
 done
 
+echo "tmax=`cat $1 | head -n 1`" > temptrange.gpl
+echo "tmin=`cat $1 | tail -n 1`" >> temptrange.gpl
+
 gnuplot < draw_cv.gpl
 
 

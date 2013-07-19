@@ -97,13 +97,13 @@ if(epsilon!=0) set arrow 4 from xlow,pc to cut,pc nohead lt 1 lw 1 lc rgb "gray"
 #set key font ",8"
 set key spacing 1.5
 
-if (wdGBP!=0) plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 4 lc rgb "gray",\
-                   (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 12 lc rgb "gray",\
-                   fn.'.nrg' u ($1/sigma_a):($2/epsilon_a) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 12 lc rgb "brown",\
-                   (ljc(x/sigma)/epsilon) title "{/Times-Italic u(r_{ij}) GBP}" w l lt 1 lw 4 lc rgb "black";\
-else plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 4 lc rgb "gray",\
-          (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 12 lc rgb "gray",\
-          (ljc(x/sigma)/epsilon) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 4 lc rgb "black";
+if (wdGBP!=0) plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 3 lc rgb "gray",\
+                   (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 8 lc rgb "gray",\
+                   fn.'.nrg' u ($1/sigma_a):($2/epsilon_a) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 8 lc rgb "brown",\
+                   (ljc(x/sigma)/epsilon) title "{/Times-Italic P(r)}" w l lt 1 lw 3 lc rgb "black";\
+else plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 3 lc rgb "gray",\
+          (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 8 lc rgb "gray",\
+          (ljc(x/sigma)/epsilon) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 3 lc rgb "black";
 
 #set arrow 2 from 547, -0.7 to 547, 3.4 nohead lt 2 lc rgb 'black'
 #set label 1 at 529, 3.5 "A_T" center font "Helvetica,16"

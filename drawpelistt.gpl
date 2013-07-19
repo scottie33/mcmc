@@ -34,10 +34,8 @@ set key spacing 1.5
 #set key box
 #set key outs
 
-plot 'PE_1.dat' u ($1/epsilon):2  w l lt 1 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=0.2}',\
- 'PE_2.dat' u ($1/epsilon):2  w l lt 2 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=0.3}',\
- 'PE_3.dat' u ($1/epsilon):2  w l lt 3 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=0.4}',\
- 'PE_4.dat' u ($1/epsilon):2  w l lt 4 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=0.5}',\
- 'PE_5.dat' u ($1/epsilon):2  w l lt 5 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=0.8}'
+plot 'PE_1.dat' u ($1/epsilon):2  w l lt 1 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=1.75}',\
+ 'PE_2.dat' u ($1/epsilon):2  w l lt 2 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=1.8}',\
+ 'PE_3.dat' u ($1/epsilon):2  w l lt 3 lw 1  title '{/Times-Italic {/Symbol b}_{CE}^{-1}=1.85}'
 
 unset multiplot

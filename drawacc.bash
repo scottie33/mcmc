@@ -17,7 +17,8 @@ paste _temperaturelist.pls accreptemp.dat > accrep.dat
 rm accreptemp.dat
 rm temp1.dat 
 rm temp2.dat 
-
+echo "tmax=`cat _temperaturelist.pls | head -n 1`" > temptrange.gpl
+echo "tmin=`cat _temperaturelist.pls | tail -n 1`" >> temptrange.gpl
 #cat all.log | grep succ | tail -n $allnum | sed -e "s/@proc\[//g" | sed "s/\]//g" | awk '{print $1,$5}' | sort
 
 gnuplot < draw_acc.gpl

@@ -155,12 +155,12 @@ int main(int argc, char** argv) {
 	//cout<<"again..."<<endl;
 	//////////////// index_min_dis begin ///////////////////
 	int _INDEX_minenerdis=_INDEX_minenerdis_eachrep[0];
-	/*for(rs=1; rs<nrep; rs++) {
+	for(rs=1; rs<nrep; rs++) {
 		if( _INDEX_minenerdis_eachrep[rs]!=0 ) {
 			_INDEX_minenerdis=_INDEX_minenerdis_eachrep[rs];
 			break;
 		}
-	}*/
+	}
 	//cout<<" calc: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<ProAll[_INDEX_minenerdis]<<endl;
 	for(rs=1; rs<nrep; rs++) {
 		if( _INDEX_minenerdis_eachrep[rs]<_INDEX_minenerdis && _INDEX_minenerdis_eachrep[rs]!=0 ) {
@@ -168,8 +168,8 @@ int main(int argc, char** argv) {
 		}
 	}
 	////////////////////////////////////////////////////	
-	cout<<" calc: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<ProAll[_INDEX_minenerdis]<<" E="<<EBins[_INDEX_minenerdis]<<endl;
-	cout<<" calc: max_ener_dist: "<<_INDEX_maxenerdis<<"::"<<ProAll[_INDEX_maxenerdis]<<" E="<<EBins[_INDEX_maxenerdis]<<endl;
+	cout<<" calc: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<ProAll[_INDEX_minenerdis]<<" E="<<EBins[_INDEX_minenerdis]<<":"<<EBins[_INDEX_minenerdis]/epsilon<<endl;
+	cout<<" calc: max_ener_dist: "<<_INDEX_maxenerdis<<"::"<<ProAll[_INDEX_maxenerdis]<<" E="<<EBins[_INDEX_maxenerdis]<<":"<<EBins[_INDEX_minenerdis]/epsilon<<endl;
 	delete[] _INDEX_maxenerdis_eachrep;
 	delete[] _INDEX_minenerdis_eachrep;
 

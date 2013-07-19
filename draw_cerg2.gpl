@@ -25,7 +25,7 @@ set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
 #xinterval=(emax-emin)/5
 #set xtics xinterval
 
-set mxtics 5
+set mxtics 10
 set mytics 5
 #set grid xtics lt 0 lw 1 lc rgb "#0000ff"
 #set style fill transparent solid 0.1 noborder

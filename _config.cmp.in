@@ -1,0 +1,57 @@
+_IFVERBOSE           1                   
+_FILENAME_conf       pnc.pdb             
+_CoorX1              -150                
+_CoorX2              150                 
+_CoorY1              -150                
+_CoorY2              150                 
+_CoorZ1              -150                
+_CoorZ2              150                 
+_PBC_Dim             1                   
+_PBL_X               300                 
+_PBL_Y               300                 
+_PBL_Z               300                 
+_PBL_X_2             150                 
+_PBL_Y_2             150                 
+_PBL_Z_2             150                 
+_BF_flag             0                   
+_AG_flag             0                   
+_DH_flag             0                   
+_NUM_atoms           65                  
+_NUM_residues        2                   
+_NUM_chains          2                   
+_FFPARA_FN           _ffpara.pls         
+_NEIGHBOR_lj         1                   
+_FLAG_ener           1                   
+_ACCINDEX            0                   
+_FLAG_rg2            1                   
+ _OPlist 65 65 
+ Group[  1] : 65-65
+ GroupPair[  1] : G1-G1
+ _EINTlist 0 1 
+ EINT[  1] : 0-1
+ EINTPair[  1] : G1-G1
+_NUM_replicas        32                  
+_RUNTIMES_eachstep   65000               
+_RUNTIMES_totalnum   10000               
+_RUNTIMES_recording  0                   
+_RESTARTFlag         1                   
+_ogboxlx             300                 
+_ogboxly             300                 
+_ogboxlz             300                 
+_RUNTIMES_output     100                 
+_RUNTIMES_remgap     50                  
+_E_lowest            -600                
+_E_interval          0.15                
+_E_highest           150                 
+_E_totalnum          5000                
+_EINT_lowest         0                   
+_EINT_interval       -4.51996            
+_EINT_highest        -289.277            
+_EINT_totalnum       64                  
+_RG_lowest           0                   
+_RG_interval         100                 
+_RG_highest          5000                
+_DISSTAT_lowest      0                   
+_DISSTAT_interval    450                 
+_DISSTAT_highest     22500               
+_RG_totalnum         50                  

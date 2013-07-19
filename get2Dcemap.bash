@@ -13,8 +13,15 @@ cp rg2maprange.gpl rangetemp.gpl
 echo "coeff=$4" >> rangetemp.gpl
 if [ $5 -eq 0 -a $6 -eq 0 ]; then
 	echo "set pm3d map" >> rangetemp.gpl
+	#echo "unset pm3d" >> rangetemp.gpl
+	echo "unset surface" >> rangetemp.gpl
+	#echo "set hidden3d back offset 1 trianglepattern 3 undefined 1 altdiagonal bentover" >> rangetemp.gpl
+	echo "set isosamples 50,50" >> rangetemp.gpl
+	#echo "set dgrid3d" >> rangetemp.gpl
 	echo "set contour base" >> rangetemp.gpl
-	echo "set cntrparam levels 50" >> rangetemp.gpl
+	#echo "set cntrparam bspline" >> rangetemp.gpl
+	echo "set cntrparam levels auto 20" >> rangetemp.gpl
+	#echo "set cntrparam order 5" >> rangetemp.gpl
 else
 	echo "set view $5,$6" >> rangetemp.gpl
 fi

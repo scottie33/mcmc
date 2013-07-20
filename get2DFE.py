@@ -90,7 +90,7 @@ while True:
 			tempnum=float(elements[2])
 			if tempnum > 0.0 :
 				if pelist[i] > 0.0:
-					print >>outfp, "%s %s %f" % ( elements[0], elements[1], -log(tempnum*pelist[i])*valTemp )
+					print >>outfp, "%s %s %f" % ( elements[0], elements[1], -(log(tempnum)+log(pelist[i]))*valTemp )
 				else:
 					print >>outfp, "%s %s %f" % ( elements[0], elements[1], cutoff )
 			else:

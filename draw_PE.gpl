@@ -19,6 +19,9 @@ set xrange [emin:emax]
 smax=(smax-smin)*1.1+smin
 set yrange [smin:smax]
 
+if(ymin<ymax) set y2range [ymin:ymax];\
+else set y2range [:]
+
 set ytics nomirror #font #"Times New Roman,14" #tc rgb "#880000"
 #set y2tics tc rgb "#008800"
 set y2tics nomirror

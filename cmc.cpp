@@ -783,9 +783,6 @@ void cmc::memo_evaluation() {
 	for(i=0; i<_NUM_chains; i++){
 		_CINDEXMAP[i][i]=num++;
 	}
-	if(_len_EINT>0) {
-		_EINT_index=_CINDEXMAP[_EINTlist[0]][_EINTlist[1]];
-	}
 	if(_PROC_ID==0) {
 		for(i=0; i<_NUM_chains; i++){
 			for(j=0; j<i; j++){
@@ -799,6 +796,11 @@ void cmc::memo_evaluation() {
 			cout<<" "<<i<<":"<<i<<":"<<_CINDEXMAP[i][i];
 		}
 		cout<<endl;
+	}
+
+	if(_len_EINT>0) {
+		_EINT_index=_CINDEXMAP[_EINTlist[0]][_EINTlist[1]];
+		tell_procid(); cout<<" eint index: "<<_EINTlist[0]<<":"<<_EINTlist[1]<<":"<<_EINT_index<<endl;
 	}
 
 	_RecordingNAME=new char[50];
@@ -5094,9 +5096,8 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	if(system(aptempa)){};
 	if(system(aptempb)){};
 
-	if(system("cp range.gpl dismaprange.gpl")){};
-	sprintf(aptempa, "echo \"ymin=%f\" >> dismaprange.gpl", _DISSTAT_lowest);
-	sprintf(aptempb, "echo \"ymax=%f\" >> dismaprange.gpl", _DISSTAT_highest);
+	sprintf(aptempa, "echo \"dmin=%f\" >> dismaprange.gpl", _DISSTAT_lowest);
+	sprintf(aptempb, "echo \"dmax=%f\" >> dismaprange.gpl", _DISSTAT_highest);
 	//tempstr="echo \"set yrange ["+string(aptempa)+string(":")+string(aptempb)+"]\" >> rg2maprange.gpl";
 	if(system(aptempa)){};
 	if(system(aptempb)){};

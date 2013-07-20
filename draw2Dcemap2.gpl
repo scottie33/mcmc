@@ -43,7 +43,8 @@ set isosamples 50,50
 
 #set cbrange [0:1]
 
-#set palette gray
+#set palette gray #negative
+
 set palette rgbformulae 22, 13,-31
 set pm3d #interpolate 1,1   #set pm3d at bst
 #set xyplane -10.0
@@ -51,6 +52,9 @@ set pm3d #interpolate 1,1   #set pm3d at bst
 #set zlabel  offset character 1, 0, 0 font "" textcolor lt -1 norotate
 
 load 'rangetemp.gpl'
+
+if(xangle!=0 || zangle!=0) set view xangle,zangle;\
+else set view map
 
 xmin=emin/epsilon
 xmax=emax/epsilon
@@ -74,8 +78,11 @@ unset key
 #set contour base
 #set cntrparam levels 50
 
-#set logscale z
+set logscale z
 
-splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w pm3d title ztitle
+print ' plotting ...'
+if(xangle!=0 || zangle!=0) splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w pm3d title ztitle;\
+else splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w l lt -1 lw 1.5 title ztitle
+print ' eps plotted!'
 
 

@@ -1,7 +1,7 @@
- emin=-391.28
+ emin=-395.12
  emax=99.88
- smin=-438.926
+ smin=-483.16
  smax=0
- epsilon=1.12989
+ epsilon=1.12999
  sigma=4.7
  numatoms=64

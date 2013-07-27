@@ -23,5 +23,5 @@ for i in range(0,NREM):
 Boltzmann=1.38e-23*0.23901*0.001*6.02e23 # kcal/k/mol
 print "\n T for real:"
 for i in range(0,NREM):
-	print Thigh/Boltzmann/pow(Thigh/Tlow, float(i)/float(NREM-1))
+	print "kBT=",Thigh/pow(Thigh/Tlow, float(i)/float(NREM-1))," kCal/mol \tT=",Thigh/Boltzmann/pow(Thigh/Tlow, float(i)/float(NREM-1)),"Kelvin"
 exit(0)

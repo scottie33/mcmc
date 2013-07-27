@@ -47,7 +47,7 @@ inline double  Energy_DH(const double&  paraK, const double&  aMa2) {
 //#template<class T> inline T
 //#define Energy_LJ(EPSILON,SIGMA12,SIGMA6,d12,d6) 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6)
 
-inline double  Energy_LJ(const double&  type, const double&  lambda, const double&  EPSILON, 
+inline double  Energy_LJ(const int&  type, const double&  lambda, const double&  EPSILON, 
 	const double&  SIGMA24, const double&  SIGMA12, const double&  SIGMA6, const double& SIGMA2, const double& SIGMA, 
 	const double& d2) {
 	//return 4.0*(fabs(EPSILON)*SIGMA12/d12-EPSILON*SIGMA6/d6);

@@ -11,7 +11,7 @@ python get2DFE.py $1 $2 $3
 
 cp rg2maprange.gpl rangetemp.gpl
 echo "coeff=$4" >> rangetemp.gpl
-echo "set palette gray #negative" >>rangetemp.gpl
+echo "set palette gray negative" >>rangetemp.gpl
 #echo "set palette rgbformulae 22, 13,-31" >> rangetemp.gpl
 
 if [ $5 -eq 0 -a $6 -eq 0 ]; then

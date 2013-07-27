@@ -1,5 +1,14 @@
-xmin=-500.000000
-xmax=100.000000
+xmin=-320.000000
+xmax=80.000000
 ymin=0.000000
-ymax=22500.000000
-set pm3d map
+ymax=250.000000
+cmin=0.000000
+cmax=-64.000000
+coeff=1.0
+set palette gray negative
+unset surface
+set contour base
+set cntrparam 
+set cntrparam levels 50
+xangle=0
+zangle=0

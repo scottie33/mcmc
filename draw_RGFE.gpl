@@ -1,0 +1,42 @@
+
+reset
+
+set term post enh size 8,4.5 color
+set out 'rgfe.eps'
+
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+set xlabel '{/Times-Italic R_{G}/{/Symbol e}}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
+#set encoding default
+set ylabel '{/Times-Italic  f_{{/Symbol b}_{CE}}}' font ",20"#UTF-8,16"# tc rgb "#880000"
+load 'paraentropy.gpl'
+load 'rg2maprange.gpl'
+
+ymin=sqrt(ymin)
+ymax=sqrt(ymax)
+
+set xrange [ymin:ymax]
+
+set ytics nomirror #font #"Times New Roman,14" #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+set y2tics nomirror
+set xtics nomirror #font #"Times,14"#font "UTF-8,12" #tc rgb "#0000ff"
+
+set mxtics 10
+set mytics 2
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+#set key outs
+
+#set key box
+#plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
+#plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
+
+plot  "RGFE.dat" u (sqrt($1)/epsilon):2 w l lt 1 lw 6 lc rgb "gray" title "",\
+   "RGFE.dat" u (sqrt($1)/epsilon):2 w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic  f_{{/Symbol b}_{CE}}}"
+
+
+unset multiplot
+
+

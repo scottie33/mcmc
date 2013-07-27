@@ -33,7 +33,7 @@ set key left
 #plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
 #plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
 
-plot "distance.dat" u ($1/epsilon):($2/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
+plot "distance.dat" u ($1/epsilon):($3/sigma) smooth unique w l lt 1 lw 6 lc rgb "gray" title "",\
 "distance.dat" u ($1/epsilon):($2/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Distance/{/Symbol s}} " 
 
 unset multiplot

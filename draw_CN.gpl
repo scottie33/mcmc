@@ -5,7 +5,7 @@ load "paraentropy.gpl"
 emin=emin/epsilon
 emax=emax/epsilon
 set term post enh size 8,4.5 color
-set out 'distance.eps'
+set out 'contactnumber.eps'
 
 #set term X11 size 640,360 #16:9 nice look
 set multiplot
@@ -13,7 +13,7 @@ set multiplot
 #set title 
 set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic Distance/{/Symbol s}}' font ",20"#font "UTF-8,16"# tc rgb "#880000"
+set ylabel '{/Times-Italic Contact Number}' font ",20"#font "UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
 smax=(smax-smin)*1.1+smin
 #oset yrange [smin:smax]
@@ -33,8 +33,8 @@ set key left
 #plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
 #plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
 
-plot "distance.dat" u ($1/epsilon):(sqrt($3)/sigma) smooth unique w l lt 1 lw 6 lc rgb "gray" title "",\
-"distance.dat" u ($1/epsilon):(sqrt($2)/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Distance/{/Symbol s}} " 
+plot "contactnumber.dat" u ($1/epsilon):($2) w l lt 1 lw 6 lc rgb "gray" title "",\
+"contactnumber.dat" u ($1/epsilon):($2) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Contact Number} " 
 
 unset multiplot
 

@@ -98,6 +98,7 @@ cmc::cmc() {
 	_len_EINT=0;
 	_FLAG_ener=false;
 	_FLAG_rg2=false;
+	_FLAG_dis=false;
 	stat_i=0; stat_j=0; stat_k=0; stat_size=0; stat_head=0; stat_tail=0; 
 	stat_com_x=NULL; stat_com_y=NULL; stat_com_z=NULL; tempnum=0.0;
 	_SIZE_memo=0;
@@ -156,7 +157,7 @@ cmc::cmc() {
 	tempind=0; tempind_x=0; tempind_y=0;
 
 	tempindex_judge=0; //tempindex_judge_bak=0;
-	tempnumer_ret=0; TempEner=0.0;
+	tempnumer_ret=-10; TempEner=0.0;
 
 	_XX=NULL; _YY=NULL; _ZZ=NULL;
 	_XX_rec=NULL; _YY_rec=NULL; _ZZ_rec=NULL;
@@ -248,10 +249,12 @@ void cmc::memo_allocation() {
 	_RG2_actual_ytot.Build(_NUM_chains,_E_totalnum);
 	_RG2_actual_z.Build(_NUM_chains,_E_totalnum);
 	_RG2_actual_ztot.Build(_NUM_chains,_E_totalnum);
-	if(_NUM_chains>1){
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) { 
 		_DISSTAT=new double[(_NUM_chains-1)*_NUM_chains/2];
 		_DIS_stat.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
 		_DIS_stat_tot.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum, _RG_totalnum);
+		_DIS_stat_actual.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum);
+		_DIS_stat_actual_tot.Build((_NUM_chains-1)*_NUM_chains/2, _E_totalnum);
 	}
 	_CINDEXMAP=new int*[_NUM_chains];
 	for(i=0; i<_NUM_chains; i++){
@@ -271,9 +274,13 @@ void cmc::memo_allocation() {
 	_RG2_z_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);*/
 	_RG2_stat.Build(_NUM_chains, _E_totalnum, _RG_totalnum);
 
-	if(_len_EINT>0) { 
-		_EINT_stat.Build(_E_totalnum, _EINT_totalnum);
-		_EINT_stat_tot.Build(_E_totalnum, _EINT_totalnum);
+	if(_len_EINT>0 ) { 
+		_CN_stat=new double[_E_totalnum];
+		_CN_stat_tot=new double[_E_totalnum];
+		if(_EINT_totalnum>1) {
+			_EINT_stat.Build(_E_totalnum, _EINT_totalnum);
+			_EINT_stat_tot.Build(_E_totalnum, _EINT_totalnum);
+		}
 	}
 
 	_ENERLJ_stat.Build((_NUM_chains+1)*_NUM_chains/2, _E_totalnum);
@@ -355,6 +362,7 @@ void cmc::memo_allocation() {
 	_PPTYPE_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA2_eachres.Build(_NUM_residues, _NUM_residues);
+	_SIGMADIS_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA3_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA6_eachres.Build(_NUM_residues, _NUM_residues);
 	_SIGMA9_eachres.Build(_NUM_residues, _NUM_residues);
@@ -430,10 +438,12 @@ void cmc::memo_setzero() {
 	_RG2_actual_z.SetZero();
 	_RG2_actual_ztot.SetZero();
 
-	if(_NUM_chains>1){
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) {
 		MEMOSETZERO(_DISSTAT, sizeof(double)*(_NUM_chains-1)*_NUM_chains/2);
 		_DIS_stat.SetZero();
 		_DIS_stat_tot.SetZero();
+		_DIS_stat_actual.SetZero();
+		_DIS_stat_actual_tot.SetZero();
 	}
 	for(i=0; i<_NUM_chains; i++){
 		for(j=0; j<_NUM_chains; j++){
@@ -460,9 +470,13 @@ void cmc::memo_setzero() {
 	_RG2_z_stat_tot.SetZero();*/
 	_RG2_stat_tot.SetZero();
 
-	if(_len_EINT>0) {	
-		_EINT_stat.SetZero();
-		_EINT_stat_tot.SetZero();
+	if(_len_EINT>0) {
+		MEMOSETZERO(_CN_stat, sizeof(double)*_E_totalnum);
+		MEMOSETZERO(_CN_stat_tot, sizeof(double)*_E_totalnum);
+		if(_EINT_totalnum>1) {
+			_EINT_stat.SetZero();
+			_EINT_stat_tot.SetZero();
+		}
 	}
 		
 	MEMOSETZERO(_ENER_delta_LJ_inter, sizeof(double)*_NUM_chains);
@@ -537,6 +551,7 @@ void cmc::memo_setzero() {
 	_PPTYPE_eachres.SetZero();
 	_SIGMA_eachres.SetZero();
 	_SIGMA2_eachres.SetZero();
+	_SIGMADIS_eachres.SetZero();
 	_SIGMA3_eachres.SetZero();
 	_SIGMA6_eachres.SetZero();
 	_SIGMA9_eachres.SetZero();
@@ -801,6 +816,14 @@ void cmc::memo_evaluation() {
 	if(_len_EINT>0) {
 		_EINT_index=_CINDEXMAP[_EINTlist[0]][_EINTlist[1]];
 		tell_procid(); cout<<" eint index: "<<_EINTlist[0]<<":"<<_EINTlist[1]<<":"<<_EINT_index<<endl;
+		_CN_backup.Build(_SIZE_of_chn[_EINTlist[0]], _SIZE_of_chn[_EINTlist[1]]);
+		_CN_backup.SetZero();
+		/*for(int i=0; i<_SIZE_of_chn[_EINTlist[0]]; i++) {
+			for(int j=0; j<_SIZE_of_chn[_EINTlist[1]]; j++) {
+				cout<<" "<<_CN_backup.pArray[i][j];
+			}
+			cout<<endl;
+		}*/
 	}
 
 	_RecordingNAME=new char[50];
@@ -954,11 +977,16 @@ void cmc::memo_free() {
 		delete[] _OPlist;
 		_OPlist=NULL;
 	}
-	if(_len_EINT>0) {
+	if(_len_EINT>0 ) {
+		_CN_backup.Release();
+		delete[] _CN_stat;
+		delete[] _CN_stat_tot;
 		delete[] _EINTlist;
 		_EINTlist=NULL;
-		_EINT_stat.Release();
-		_EINT_stat_tot.Release();
+		if(_EINT_totalnum>1) {
+			_EINT_stat.Release();
+			_EINT_stat_tot.Release();
+		}
 	}
 	delete[] _COM_x;
 	delete[] _COM_y;
@@ -974,10 +1002,12 @@ void cmc::memo_free() {
 	_RG2_y=NULL;
 	_RG2_z=NULL;
 	_RG2_ec=NULL;
-	if(_NUM_chains>1){
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) {
 		delete[] _DISSTAT; _DISSTAT=NULL;
 		_DIS_stat.Release();
 		_DIS_stat_tot.Release();
+		_DIS_stat_actual.Release();
+		_DIS_stat_actual_tot.Release();
 	}
 
 	delete[] stat_com_x;
@@ -1123,6 +1153,7 @@ void cmc::memo_free() {
 	_PPTYPE_eachres.Release();
 	_SIGMA_eachres.Release();
 	_SIGMA2_eachres.Release();
+	_SIGMADIS_eachres.Release();
 	_SIGMA3_eachres.Release();
 	_SIGMA6_eachres.Release();
 	_SIGMA9_eachres.Release();
@@ -1179,6 +1210,7 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 			readparameter(tempstr, string("_NEIGHBOR_lj"), _NEIGHBOR_lj);
 			readparameter(tempstr, string("_FLAG_ener"), _FLAG_ener);
 			readparameter(tempstr, string("_FLAG_rg2"), _FLAG_rg2);
+			readparameter(tempstr, string("_FLAG_dis"), _FLAG_dis);
 
 			readparameter(tempstr, string("_ACCINDEX"), _ACCINDEX);
 
@@ -1317,6 +1349,7 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 		//cout<<setw(30)<<" ::_FLAG_ener: "<<_FLAG_ener<<endl;
 		cout<<setw(30)<<" ::_FLAG_ener: "<<_FLAG_ener<<endl;
 		cout<<setw(30)<<" ::_FLAG_rg2: "<<_FLAG_rg2<<endl;
+		cout<<setw(30)<<" ::_FLAG_dis: "<<_FLAG_dis<<endl;
 		//_ACCINDEX_bf=sqrt(_ACCINDEX);
 		//_ACCINDEX_ag=_ACCINDEX/2.0;
 		cout<<setw(30)<<" ::_ACCINDEX: "<<_ACCINDEX<<endl;
@@ -1416,6 +1449,7 @@ void cmc::write_parameters(const string FILENAME_para) {
 	//writeparameter(para_ofstream, string("_ACCINDEX_bf"), _ACCINDEX_bf);
 
 	writeparameter(para_ofstream, string("_FLAG_rg2"), _FLAG_rg2);
+	writeparameter(para_ofstream, string("_FLAG_dis"), _FLAG_dis);
 	para_ofstream<<" _OPlist ";
 	int i=0;
 	for(i=0; i<_len_OP; i++) {
@@ -1495,7 +1529,7 @@ void cmc::write_parameters(const string FILENAME_para) {
 	writeparameter(para_ofstream, string("_RG_interval"), _RG_interval);
 	writeparameter(para_ofstream, string("_RG_highest"), _RG_highest);
 	_DISSTAT_lowest=0.0;
-	_DISSTAT_highest=(_PBL_X_2>_PBL_Y_2?_PBL_X_2:_PBL_Y_2)>_PBL_Z_2?(_PBL_X_2>_PBL_Y_2?_PBL_X_2:_PBL_Y_2):_PBL_Z_2;
+	_DISSTAT_highest=sqrt(_PBL_X_2*_PBL_X_2+_PBL_Y_2*_PBL_Y_2+_PBL_Z_2*_PBL_Z_2);
 	_DISSTAT_highest=_DISSTAT_highest*_DISSTAT_highest;
 	_DISSTAT_interval=(_DISSTAT_highest-_DISSTAT_lowest)/_RG_totalnum;
 	//_DISSTAT_lowest+=_DISSTAT_interval;
@@ -1545,6 +1579,7 @@ void cmc::broadcast_parameters() {
 	//MPI_Bcast(&_ACCINDEX_ag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	//MPI_Bcast(&_ACCINDEX_bf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_FLAG_rg2, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_FLAG_dis, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_OP, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_EINT, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -1781,9 +1816,10 @@ void cmc::broadcast_epsilonsigma() {
 
 	MPI_Bcast(_EPSILON_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_LAMBDA_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(_PPTYPE_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_PPTYPE_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA2_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_SIGMADIS_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA3_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA6_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_SIGMA9_eachres.pArray[0], _NUM_residues*_NUM_residues, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -1852,7 +1888,7 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 						} else { // read info;
 							if(xx>=EP_SIG_X) { continue; }
 							for(yy=0; yy<EP_SIG_Y; yy++ ) {
-								_PPTYPE_eachres.pArray[xx][yy]=atof(tempvec[yy].c_str());
+								_PPTYPE_eachres.pArray[xx][yy]=atoi(tempvec[yy].c_str());
 								if(_IFVERBOSE) { 
 									cout<<setw(6)<<_PPTYPE_eachres.pArray[xx][yy]<<" ";
 								}
@@ -2275,6 +2311,7 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			_RMAX.pArray[xx][yy]=_BOND_length.pArray[xx][yy]+_BOND_delta.pArray[xx][yy];
 			_DDELTA.pArray[xx][yy]=2.0*_BOND_delta.pArray[xx][yy];
 			_SIGMA2_eachres.pArray[xx][yy]=_SIGMA_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
+			_SIGMADIS_eachres.pArray[xx][yy]=_SIGMA2_eachres.pArray[xx][yy]*_CN_coeff*_CN_coeff;
 			_SIGMA3_eachres.pArray[xx][yy]=_SIGMA2_eachres.pArray[xx][yy]*_SIGMA_eachres.pArray[xx][yy];
 			_SIGMA6_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA3_eachres.pArray[xx][yy];
 			_SIGMA9_eachres.pArray[xx][yy]=_SIGMA3_eachres.pArray[xx][yy]*_SIGMA6_eachres.pArray[xx][yy];
@@ -4391,10 +4428,10 @@ void cmc::init_statistic() {
 			for(stat_j=0; stat_j<=stat_i; stat_j++) {
 				tempElj[_CINDEXMAP[stat_i][stat_j]]=0.0;
 				if(stat_i==stat_j) {		
-					stat_head=_INDEX_CHN_HEAD[stat_j];
-					stat_tail=_INDEX_CHN_TAIL[stat_j]+1;
-					for(stat_k=stat_head; stat_k<stat_tail; stat_k++) {
-						for(stat_l=stat_k+1; stat_l<stat_tail; stat_l++) {
+					stat_head_j=_INDEX_CHN_HEAD[stat_j];
+					stat_tail_j=_INDEX_CHN_TAIL[stat_j]+1;
+					for(stat_k=stat_head_j; stat_k<stat_tail_j; stat_k++) {
+						for(stat_l=stat_k+1; stat_l<stat_tail_j; stat_l++) {
 							tempElj[_CINDEXMAP[stat_i][stat_j]]+=_ENER_LJ_eachatom.pArray[stat_k][stat_l];
 						}
 					}
@@ -4464,7 +4501,7 @@ void cmc::init_statistic() {
 			}
 
 			//over
-			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary?
+			if( _SIZE_of_chn[stat_i] > 1 ) {//necessary?
 				_RG2_x[stat_i]=0.0;
 				_RG2_y[stat_i]=0.0;
 				_RG2_z[stat_i]=0.0;
@@ -4485,17 +4522,40 @@ void cmc::init_statistic() {
 				cout<<"       rg2x="<<_RG2_x[stat_i]/stat_size<<endl;
 				cout<<"       rg2y="<<_RG2_y[stat_i]/stat_size<<endl;
 				cout<<"       rg2z="<<_RG2_z[stat_i]/stat_size<<endl;
-				_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval);
-				if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
-					_indexRGSTAT[stat_i]=_RG_totalnum-1;
-				} else if (_indexRGSTAT[stat_i]<0) {
-					_indexRGSTAT[stat_i]=0;
-				} else {
-					_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
+				if(_RG_totalnum>1) {
+					_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval);
+					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
+						_indexRGSTAT[stat_i]=_RG_totalnum-1;
+					} else if (_indexRGSTAT[stat_i]<0) {
+						_indexRGSTAT[stat_i]=0;
+					} else {
+						_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
+					}
+					cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 				}
-				cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 			}
 		}
+	}
+	if( _FLAG_ener && _len_EINT>0 ) {
+		_CNSTAT=0.0;
+		tempindexstat=_EINTlist[0];
+		stat_head=_INDEX_CHN_HEAD[tempindexstat];
+		stat_tail=_INDEX_CHN_TAIL[tempindexstat]+1;
+		for(stat_k=stat_head,stat_i=0; stat_k<stat_tail; stat_k++,stat_i++) {
+			tempindexstat_ij=_EINTlist[1];
+			stat_head_j=_INDEX_CHN_HEAD[tempindexstat_ij];
+			stat_tail_j=_INDEX_CHN_TAIL[tempindexstat_ij]+1;
+			for(stat_l=stat_head_j,stat_j=0; stat_l<stat_tail_j; stat_l++,stat_j++) {
+				if(_DIS2_eachatom.pArray[stat_k][stat_l]<_SIGMADIS_eachres.pArray[_INDEX_RES_ATM[stat_k]][_INDEX_RES_ATM[stat_l]]) {
+					_CN_backup.pArray[stat_i][stat_j]=1.0;
+					_CNSTAT+=1.0;
+				}
+				if(_IFVERBOSE) cout<<" "<<_CN_backup.pArray[stat_i][stat_j];
+			}
+			if(_IFVERBOSE) cout<<endl;
+		}
+		//cout<<" _CNSTAT="<<_CNSTAT<<endl;
+		//getchar();
 	}
 	cout<<" @Proc"<<_PROC_ID<<" Etot="<<tempEtot<<" v.s. CurrentE="<<_ENER_total<<endl;
 	if( fabs(tempEtot-_ENER_total)>1e-6) {
@@ -4537,12 +4597,12 @@ inline void cmc::statistic() { //every step!!
 
 		if(_FLAG_rg2) {
 			//cout<<_COM_x[stat_i]<<endl;
-			if(stat_i==_INDEX_chn_ind) { //only current chn com and rg2 needs to be updated.
+			if(tempnumer_ret>1 && stat_i==_INDEX_chn_ind) { //only current chn com and rg2 needs to be updated.
 				stat_com_x[stat_i]=_COM_x[stat_i]/stat_size;
 				stat_com_y[stat_i]=_COM_y[stat_i]/stat_size;
 				stat_com_z[stat_i]=_COM_z[stat_i]/stat_size;
 				//cout<<_COM_x[stat_i]/stat_size<<endl;
-				if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) { //necessary?
+				if( _SIZE_of_chosen_chn>1 ) { //necessary?
 					_RG2_x[stat_i]=0.0;
 					_RG2_y[stat_i]=0.0;
 					_RG2_z[stat_i]=0.0;
@@ -4557,31 +4617,34 @@ inline void cmc::statistic() { //every step!!
 						_RG2_z[stat_i]+=tempnum*tempnum;
 						//_RG2_z_stat.pArray[stat_i][tempindex_judge]+=tempnum*tempnum;
 					}
-					/*_RG2_ec[stat_i]=0.0; // this is slower than the above code...
-					for(stat_j=stat_head; stat_j<stat_tail; stat_j++) {
-						for(stat_k=stat_j; stat_k<stat_tail; stat_k++) {
-							_RG2_ec[stat_i]+=_DIS2_eachatom.pArray[stat_j][stat_k];
-						}
+
+					if( _RG_totalnum>1 ) {
+						_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
+						if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
+							_indexRGSTAT[stat_i]=_RG_totalnum-1;
+						} /*else if (_indexRGSTAT[stat_i]<0) {//normally impossible since rg from 0.0.
+							_indexRGSTAT[stat_i]=0;
+						} *//*else {//unchanged index
+							_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
+						}*/
+						//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
 					}
-					_RG2_ec[stat_i]=_RG2_ec[stat_i]/stat_size/stat_size;*/
 				}
-				for(stat_j=0; stat_j<stat_i; stat_j++) { // att: i!=j; otherwise it's an error!!! this index not in array _cindexmap;
-					tempnumerstat=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat*tempnumerstat;
-					tempnumerstat=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
-					tempnumerstat=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
-					//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
-				}	
-				for(stat_j=stat_i+1; stat_j<_NUM_chains; stat_j++) {
-					tempnumerstat=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat*tempnumerstat;
-					tempnumerstat=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
-					tempnumerstat=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
-					_DISSTAT[_CINDEXMAP[stat_i][stat_j]]+=tempnumerstat*tempnumerstat;
-					//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
+				if(_FLAG_dis) {
+					for(stat_j=0; stat_j<stat_i; stat_j++) { // att: i!=j; otherwise it's an error!!! this index not in array _cindexmap;
+						tempnumerstat_x=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
+						tempnumerstat_y=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
+						tempnumerstat_z=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
+						_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat_x*tempnumerstat_x+tempnumerstat_y*tempnumerstat_y+tempnumerstat_z*tempnumerstat_z;
+						//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
+					}	
+					for(stat_j=stat_i+1; stat_j<_NUM_chains; stat_j++) {
+						tempnumerstat_x=DIS_PBC_X(stat_com_x[stat_i]-stat_com_x[stat_j]);
+						tempnumerstat_y=DIS_PBC_Y(stat_com_y[stat_i]-stat_com_y[stat_j]);
+						tempnumerstat_z=DIS_PBC_Z(stat_com_z[stat_i]-stat_com_z[stat_j]);
+						_DISSTAT[_CINDEXMAP[stat_i][stat_j]]=tempnumerstat_x*tempnumerstat_x+tempnumerstat_y*tempnumerstat_y+tempnumerstat_z*tempnumerstat_z;
+						//tell_procid(); cout<<" statistic() DIS over! "<<stat_i<<" "<<stat_j<<endl;	
+					}
 				}
 			}
 
@@ -4596,7 +4659,7 @@ inline void cmc::statistic() { //every step!!
 
 			//tell_procid(); cout<<" statistic() COM over! "<<stat_i<<endl;	
 
-			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary?
+			if( _SIZE_of_chn[stat_i]>1 ) {//necessary?
 				/*i=int((_RG2_x[stat_i]/stat_size-_RG_lowest)/_RG_interval);
 				if(i>=_RG_totalnum) {
 					_RG2_x_stat.pArray[stat_i][tempindex_judge][_RG_totalnum-1]+=1.0;
@@ -4621,19 +4684,7 @@ inline void cmc::statistic() { //every step!!
 				} else {
 					_RG2_z_stat.pArray[stat_i][tempindex_judge][i]+=1.0;
 				}*/
-				if(_RG_totalnum>1 && stat_i==_INDEX_chn_ind) {
-					//_RG2_ec[stat_i]=(_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size;
-					_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
-					//_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval); //slower;
-					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
-						_indexRGSTAT[stat_i]=_RG_totalnum-1;
-					} /*else if (_indexRGSTAT[stat_i]<0) {//normally impossible since rg from 0.0.
-						_indexRGSTAT[stat_i]=0;
-					} *//*else {//unchanged index
-						_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
-					}*/
-					//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
-				}
+				
 				if(_RG_totalnum>1 ) {
 					_RG2_stat.pArray[stat_i][tempindex_judge][_indexRGSTAT[stat_i]]+=1.0;
 				}
@@ -4644,32 +4695,90 @@ inline void cmc::statistic() { //every step!!
 			//if(_COM_x_stat.pArray[stat_i][tempindex_judge]>1e-6) cout<<stat_i<<" "<<_COM_x_stat.pArray[stat_i][tempindex_judge]<<" "<<_RG2_x_stat.pArray[stat_i][tempindex_judge]<<endl;
 		}
 	}
-	if(_FLAG_rg2) { 
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) { 
 		for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 			for(stat_j=0; stat_j<stat_i; stat_j++) {
-				tempindexstat=int((_DISSTAT[_CINDEXMAP[stat_i][stat_j]]-_DISSTAT_lowest)/_DISSTAT_interval);
+				tempindexstat_ij=_CINDEXMAP[stat_i][stat_j];
+				tempnumerstat_x=_DISSTAT[tempindexstat_ij];
+				_DIS_stat_actual.pArray[tempindexstat_ij][tempindex_judge]+=tempnumerstat_x;
+				tempindexstat=int((tempnumerstat_x-_DISSTAT_lowest)/_DISSTAT_interval);
 				if(tempindexstat>=_RG_totalnum) {
-					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][_RG_totalnum-1]+=1.0;
+					_DIS_stat.pArray[tempindexstat_ij][tempindex_judge][_RG_totalnum-1]+=1.0;
 				} /*else if (tempindexstat<0) {
 					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][0]+=1.0;
 				} */else {
-					_DIS_stat.pArray[_CINDEXMAP[stat_i][stat_j]][tempindex_judge][tempindexstat]+=1.0;
+					_DIS_stat.pArray[tempindexstat_ij][tempindex_judge][tempindexstat]+=1.0;
 				}
 			}	
 		}
 	}
+
+	//tell_procid(); cout<<" here1"<<endl;
 	if( _FLAG_ener && _len_EINT>0 ) { 
-		tempindexstat=int((tempElj[_EINT_index]-_EINT_lowest)/_EINT_interval);
-		if(tempindexstat>=_EINT_totalnum) {
-			_EINT_stat.pArray[tempindex_judge][_EINT_totalnum]+=1.0;
-		} else if(tempindexstat<0) {
-			_EINT_stat.pArray[tempindex_judge][0]+=1.0;
-		} else {
-			_EINT_stat.pArray[tempindex_judge][tempindexstat]+=1.0;
+		if(_EINT_totalnum>1) {
+			tempindexstat=int((tempElj[_EINT_index]-_EINT_lowest)/_EINT_interval);
+			if(tempindexstat>=_EINT_totalnum) {
+				_EINT_stat.pArray[tempindex_judge][_EINT_totalnum-1]+=1.0;
+			} else if(tempindexstat<0) {
+				_EINT_stat.pArray[tempindex_judge][0]+=1.0;
+			} else {
+				_EINT_stat.pArray[tempindex_judge][tempindexstat]+=1.0;
+			}
 		}
+		if( tempnumer_ret==2 ) { //only succ we update the CN;
+			if(_INDEX_chn_ind==_EINTlist[0]) {
+				tempindexstat=_EINTlist[1];
+				stat_head=_INDEX_CHN_HEAD[tempindexstat];
+				stat_tail=_INDEX_CHN_TAIL[tempindexstat]+1;
+				for(stat_k=stat_head,stat_j=0; stat_k<stat_tail; stat_k++,stat_j++) {
+					/*cout<<endl<<"_INDEX_chosen:"<<_INDEX_chosen<<endl;
+					cout<<"stat_k:"<<stat_k<<endl;
+					cout<<"_Res_chosen:"<<_Res_chosen<<endl;
+					cout<<"_INDEX_RES_ATM[stat_k]:"<<_INDEX_RES_ATM[stat_k]<<endl;
+					cout<<"dis2:"<<_DIS2_eachatom.pArray[_INDEX_chosen][stat_k]<<endl;
+					cout<<"sigd:"<<_SIGMADIS_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[stat_k]]<<endl;
+					cout<<"_CN_backup0:"<<_CN_backup.pArray[_INDEX_chosen][stat_k]<<endl;
+					cout<<"_CNSTAT0:"<<_CNSTAT<<endl;*/
+					if(_DIS2_eachatom.pArray[_INDEX_chosen][stat_k]<_SIGMADIS_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[stat_k]]) {
+						if(_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]<1.0) {
+							_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]=1.0;
+							_CNSTAT+=1.0;
+						}
+					} else {
+						if(_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]>1e-6) {
+							_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]=0.0;
+							_CNSTAT-=1.0;
+						}
+					}
+					//cout<<"_CN_backup1:"<<_CN_backup.pArray[_INDEX_chosen][stat_k]<<endl;
+					//cout<<"_CNSTAT1:"<<_CNSTAT<<endl;
+				}
+			} else if(_INDEX_chn_ind==_EINTlist[1]) {
+				//cout<<" in this case this is impossible!"<<endl;
+				tempindexstat=_EINTlist[0];
+				stat_head=_INDEX_CHN_HEAD[tempindexstat];
+				stat_tail=_INDEX_CHN_TAIL[tempindexstat]+1;
+				for(stat_k=stat_head,stat_j=0; stat_k<stat_tail; stat_k++,stat_j++) {
+					if(_DIS2_eachatom.pArray[stat_k][_INDEX_chosen]<_SIGMADIS_eachres.pArray[_INDEX_RES_ATM[stat_k]][_Res_chosen]) {
+						if(_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]<1.0) {
+							_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]=1.0;
+							_CNSTAT+=1.0;
+						}
+					} else {
+						if(_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]>1e-6) {
+							_CN_backup.pArray[_INDEX_atm_in_chn_ind][stat_j]=0.0;
+							_CNSTAT-=1.0;
+						}
+					}
+				}
+			}
+		}
+		_CN_stat[tempindex_judge]+=_CNSTAT;
 	}
+
+	//tell_procid(); cout<<" here2"<<endl;
 	/*double tempEtot=0.0;
-	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
+	for(stat_i=0; stat_i<_NUM_chains; stat_i++) { 
 		//stat_size=_SIZE_of_chn[stat_i];
 		//stat_head=_INDEX_CHN_HEAD[stat_i];
 		//stat_tail=_INDEX_CHN_TAIL[stat_i];
@@ -4700,15 +4809,19 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	//MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	if(_len_EINT>0) {
+	if( _len_EINT>0 && _EINT_totalnum>1 ) {
 		MPI_Reduce(_EINT_stat.pArray[0], _EINT_stat_tot.pArray[0], _E_totalnum*_EINT_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
+	if( _len_EINT>0 ) {
+		MPI_Reduce(_CN_stat, _CN_stat_tot, _E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
 	MPI_Reduce(_RG2_actual_x.pArray[0], _RG2_actual_xtot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_actual_y.pArray[0], _RG2_actual_ytot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_RG2_actual_z.pArray[0], _RG2_actual_ztot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	if(_NUM_chains>1) {
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) {
 		MPI_Reduce(_DIS_stat.pArray[0][0], _DIS_stat_tot.pArray[0][0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(_DIS_stat_actual.pArray[0], _DIS_stat_actual_tot.pArray[0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
 	if(_PROC_ID!=0) {
 		return;
@@ -4748,90 +4861,107 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 	//double tempSum_z=0.0;
 	double tempNum_all=0.0;
 	double tempSum_all=0.0;
-	if(_NUM_chains>1) {
+	if(_NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) {
 		ofstream* temposDIS;
 		ofstream* temposDIS_plot;
 		temposDIS=new ofstream[(_NUM_chains-1)*_NUM_chains/2];
 		temposDIS_plot=new ofstream[(_NUM_chains-1)*_NUM_chains/2];
-		if(_FLAG_rg2) {
-			for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
-				for(stat_j=0; stat_j<stat_i; stat_j++) {
-					sprintf(tempfilename, "DIS%03d%03d.dat", stat_i+1, stat_j+1);
-					cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
-					temposDIS[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
-					cout<<" file "<<tempfilename<<" opened ."<<endl;
-					sprintf(tempfilename, "dis%03d%03d_plot.dat", stat_i+1, stat_j+1);
-					cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
-					temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
-					cout<<" file "<<tempfilename<<" opened ."<<endl;
-					for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
-						tempNum_all=0.0;
-						tempSum_all=0.0;
-						for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
-							tempNum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l];
-							tempSum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l]*(_DISSTAT_lowest+_DISSTAT_interval*stat_l);
-						}
-						if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
-							cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
-							exit(LOGICERROR);
-						}
-						if(_Probability_all[stat_k]<1e-6) {
-							temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(8)<<0.0<<endl;
-						} else {
-							temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-						             <<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;	
-						}
-						for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
-							if( fabs(tempNum_all)>1e-6 ) {
-							   	temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-							                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
-							                  <<setw(8)<<double(_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l])/double(tempNum_all)<<endl;
-							} else {
-							    temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-							                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
-							                  <<setw(8)<<0.0<<endl;
-							}
-						}
-						temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<" "<<endl;
+		for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
+			for(stat_j=0; stat_j<stat_i; stat_j++) {
+				sprintf(tempfilename, "DIS%03d%03d.dat", stat_i+1, stat_j+1);
+				cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
+				temposDIS[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
+				cout<<" file "<<tempfilename<<" opened ."<<endl;
+				sprintf(tempfilename, "dis%03d%03d_plot.dat", stat_i+1, stat_j+1);
+				cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_CINDEXMAP[stat_i][stat_j]<<" ;-) "<<endl;
+				temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].open(tempfilename);
+				cout<<" file "<<tempfilename<<" opened ."<<endl;
+				for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
+					tempNum_all=0.0;
+					tempSum_all=0.0;
+					for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
+						tempNum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l];
+						tempSum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l]*(_DISSTAT_lowest+_DISSTAT_interval*stat_l);
 					}
-					temposDIS[_CINDEXMAP[stat_i][stat_j]].close();
-					temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].close();
+					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+						cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
+						exit(LOGICERROR);
+					}
+					if(_Probability_all[stat_k]<1e-6) {
+						temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "<<setw(8)<<0.0<<" "<<setw(8)<<0.0<<endl;
+					} else {
+						temposDIS[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					             <<setw(10)<<_DIS_stat_actual_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k]/_Probability_all[stat_k]
+					             <<setw(10)<<tempSum_all/_Probability_all[stat_k]<<endl;	
+					}
+					for(stat_l=0; stat_l<_RG_totalnum; stat_l++) {
+						if( fabs(tempNum_all)>1e-6 ) {
+						   	temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
+						                  <<setw(8)<<double(_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l])/double(tempNum_all)<<endl;
+						} else {
+						    temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_DISSTAT_lowest+double(stat_l)*_DISSTAT_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+						}
+					}
+					temposDIS_plot[_CINDEXMAP[stat_i][stat_j]]<<" "<<endl;
 				}
+				temposDIS[_CINDEXMAP[stat_i][stat_j]].close();
+				temposDIS_plot[_CINDEXMAP[stat_i][stat_j]].close();
 			}
 		}
 	}//end of dis output;
 	if(_len_EINT>0) {
-		ofstream temposEINT_plot;
 		if(_FLAG_ener) {
-			sprintf(tempfilename, "eint%03d%03d_plot.dat", _EINTlist[0]+1, _EINTlist[1]+1);
+			if(_EINT_totalnum>1) {
+				ofstream temposEINT_plot;
+				sprintf(tempfilename, "eint%03d%03d_plot.dat", _EINTlist[0]+1, _EINTlist[1]+1);
+				cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_EINT_index<<" ;-) "<<endl;
+				temposEINT_plot.open(tempfilename);
+				cout<<" file "<<tempfilename<<" opened ."<<endl;
+				for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
+					tempNum_all=0.0;
+					tempSum_all=0.0;
+					for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
+						tempNum_all+=_EINT_stat_tot.pArray[stat_k][stat_l];
+						tempSum_all+=_EINT_stat_tot.pArray[stat_k][stat_l]*(_EINT_lowest+_EINT_interval*stat_l);
+					}
+					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+						cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
+						exit(LOGICERROR);
+					}
+					for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
+						if( fabs(tempNum_all)>1e-6 ) {
+						   	temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
+						                  <<setw(8)<<double(_EINT_stat_tot.pArray[stat_k][stat_l])/double(tempNum_all)<<endl;
+						} else {
+						    temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+						                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
+						                  <<setw(8)<<0.0<<endl;
+						}
+					}
+					temposEINT_plot<<" "<<endl;
+				}
+				temposEINT_plot.close();
+			}
+			///add your code here/// for contact number;
+			ofstream temposCN;
+			sprintf(tempfilename, "CN%03d%03d.dat", _EINTlist[0]+1, _EINTlist[1]+1);
 			cout<<" now writing : "<<tempfilename<<" to stream ~ "<<_EINT_index<<" ;-) "<<endl;
-			temposEINT_plot.open(tempfilename);
+			temposCN.open(tempfilename);
 			cout<<" file "<<tempfilename<<" opened ."<<endl;
 			for(stat_k=0; stat_k<_E_totalnum; stat_k++) { //each E bin;
-				tempNum_all=0.0;
-				tempSum_all=0.0;
-				for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
-					tempNum_all+=_EINT_stat_tot.pArray[stat_k][stat_l];
-					tempSum_all+=_EINT_stat_tot.pArray[stat_k][stat_l]*(_EINT_lowest+_EINT_interval*stat_l);
-				}
-				if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
-					cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
-					exit(LOGICERROR);
-				}
-				for(stat_l=0; stat_l<_EINT_totalnum; stat_l++) {
-					if( fabs(tempNum_all)>1e-6 ) {
-					   	temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
-					                  <<setw(8)<<double(_EINT_stat_tot.pArray[stat_k][stat_l])/double(tempNum_all)<<endl;
-					} else {
-					    temposEINT_plot<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
-					                  <<setw(8)<<_EINT_lowest+double(stat_l)*_EINT_interval<<" "
+				if(_Probability_all[stat_k]<1e-6) {
+					temposCN<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
 					                  <<setw(8)<<0.0<<endl;
-					}
+				} else {
+					temposCN<<setw(8)<<(_E_lowest+_E_interval*stat_k)<<" "
+					                  <<setw(8)<<_CN_stat_tot[stat_k]/_Probability_all[stat_k]<<endl;
 				}
-				temposEINT_plot<<" "<<endl;
 			}
-			temposEINT_plot.close();
+			temposCN.close();
 		}
 	}//end of eint output;
 	for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
@@ -4944,7 +5074,8 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 			}
 			temposCOM[stat_i].close();
 
-			if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary? {
+			//if( !_INDEX_chn_or_not_chain[stat_i] || (_SIZE_of_chn[stat_i] > 2) ) {//necessary? {
+			if( _SIZE_of_chn[stat_i] > 1 ) {//necessary? {
 				sprintf(tempfilename, "RG2%03d.dat", stat_i+1);
 				temposRG2[stat_i].open(tempfilename);
 				cout<<" now writing : "<<tempfilename<<" to stream~"<<stat_i<<" ;-) "<<endl;

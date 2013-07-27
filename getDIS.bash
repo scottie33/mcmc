@@ -71,4 +71,11 @@ for eafi in `ls DIS*.dat`; do
 	fi
 done
 
+for eafi in `ls CN*.dat`; do
+	cp $eafi contactnumber.dat 
+	gnuplot < draw_CN.gpl
+	mv contactnumber.eps ${eafi}.eps
+	echo " file: [ ${eafi}.eps ] created. ;-)"
+done
+
 exit 0

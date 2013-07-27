@@ -14,6 +14,7 @@ using namespace MPI;
 #define _OUTPUT_LEN  50
 #define _CONVERGENCE 1e-12
 #define _CONF_DIR {string("_conformations")}
+#define _CN_coeff 1.35
 
 class cmc {
 public:
@@ -157,9 +158,10 @@ private:
 	CMyArray<double> _PHIZERO_sin;
 	CMyArray<double> _EPSILON_eachres;
 	CMyArray<double> _LAMBDA_eachres;
-	CMyArray<double> _PPTYPE_eachres;
+	CMyArray<int> _PPTYPE_eachres;
 	CMyArray<double> _SIGMA_eachres;
 	CMyArray<double> _SIGMA2_eachres;
+	CMyArray<double> _SIGMADIS_eachres;
 	CMyArray<double> _SIGMA3_eachres;
 	CMyArray<double> _SIGMA6_eachres;
 	CMyArray<double> _SIGMA9_eachres;
@@ -434,6 +436,8 @@ private:
 	CMyArray<double> _COM_y_stat;
 	CMyArray<double> _COM_z_stat;
 	CMyArray3<double> _DIS_stat;
+	CMyArray<double> _DIS_stat_actual;
+	CMyArray<double> _DIS_stat_actual_tot;
 
 	int** _CINDEXMAP;
 	CMyArray<double> _RG2_actual_x;
@@ -444,6 +448,10 @@ private:
 	CMyArray<double> _RG2_actual_ztot;
 	CMyArray3<double> _RG2_stat;
 	CMyArray<double> _EINT_stat;
+	CMyArray<double> _CN_backup;
+	double _CNSTAT;
+	double* _CN_stat;
+	double* _CN_stat_tot;
 	int _EINT_totalnum;
 	double _EINT_interval;
 	double _EINT_lowest;
@@ -453,7 +461,10 @@ private:
     int _EINT_index;
 	int* _indexRGSTAT;
 	int tempindexstat;
-	int tempnumerstat;
+	int tempindexstat_ij;
+	double tempnumerstat_x;
+	double tempnumerstat_y;
+	double tempnumerstat_z;
 	CMyArray<double> _COM_x_stat_tot;
 	CMyArray<double> _COM_y_stat_tot;
 	CMyArray<double> _COM_z_stat_tot;
@@ -484,6 +495,7 @@ private:
     //int _tfrom;
     //int _tto;
 	bool _FLAG_rg2;
+	bool _FLAG_dis;
 	//double* _rgyration2; //for each selection...
 	//ofstream* _rg2_stream;
 	//////////////
@@ -500,6 +512,8 @@ private:
 	int stat_size;
 	int stat_head;
 	int stat_tail; 
+	int stat_head_j;
+	int stat_tail_j; 
 	double* stat_com_x;
 	double* stat_com_y;
 	double* stat_com_z;

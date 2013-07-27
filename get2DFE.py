@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import sys,os
-from math import exp,log,pow
+from math import exp,log,pow,sqrt
 
 def log_cc(log_aa, log_bb): #cc=aa+bb; give log_aa, log_bb, return log_cc;
 	if log_aa>log_bb: 
@@ -80,30 +80,54 @@ except IOError:
 i=0
 x=0
 maxfe=0.0
+rglist=[]
+rgfelist=[]
 while True:
 	line=oefp.readline()
 	if line:
 		line=line.rstrip()
 		elements=line.split()
-
 		if len(elements)==3:
+			if i == 0: 
+				temp=0.0;
+				rglist.append(elements[1])
+				rgfelist.append(temp)
+			tempfe=0.0
 			tempnum=float(elements[2])
 			if tempnum > 0.0 :
 				if pelist[i] > 0.0:
-					print >>outfp, "%s %s %f" % ( elements[0], elements[1], -(log(tempnum)+log(pelist[i]))*valTemp )
+					tempfe=-(log(tempnum)+log(pelist[i]))*valTemp;
+					print >>outfp, "%s %s %f" % ( elements[0], elements[1], tempfe )
 				else:
 					print >>outfp, "%s %s %f" % ( elements[0], elements[1], cutoff )
 			else:
 				print >>outfp, "%s %s %f" % ( elements[0], elements[1], cutoff )
+			rgfelist[x]=rgfelist[x]+tempfe
+			x=x+1
 		if len(elements)==0:
 			#print i
 			print >>outfp, ""
 			#i=0
-			#x=x+1
+			x=0
 			i=i+1
 	else:
 		break
 print "",i,"data series loaded." 
+
+tfname="RGFE.dat"
+try:
+	outfprg=open(tfname, 'w')
+	print " writing information into: [ "+tfname+" ]"
+except IOError:
+	print " can not open file: [ "+tfname+" ]"
+	exit(-1)
+templen=len(rglist)
+for i in range(templen):
+	print >>outfprg, "%s %f" % (rglist[i], rgfelist[i])
+outfprg.close()
+print "",i,"data series loaded." 
+
+os.system("gnuplot draw_RGFE.gpl")
 
 ener=[]
 pelist=[]

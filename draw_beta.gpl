@@ -11,11 +11,11 @@ set multiplot
 #set title 
 
 load "parabeta.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
-set xlabel '{/Times-Italic E/{/Symbol e}}' #font "Arial,16"# tc rgb "#0000ff"
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' #font "Arial,16"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic {/Symbol b}(E/{/Symbol e})}' #font "UTF-8,16"# tc rgb "#880000"
+set ylabel '{/Times-Italic {/Symbol b}(E/{/Symbol e}/N)}' #font "UTF-8,16"# tc rgb "#880000"
 #set xrange [emin+(emax-emin)/2:emax]
 set xrange [emin:emax]
 set yrange [bmin:bmax]
@@ -37,8 +37,8 @@ set key box
 #plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
 #plot "beta.dat" u 1:2 w l lt 2 lw 1 lc rgb "gray" title "",\
 
-plot    "beta_smoothed.dat" u ($1/epsilon):2 w l lt 1 lw 6 lc rgb "gray" title "{/Times-Italic {/Symbol b}(E/{/Symbol e})}",\
- "beta_smoothed.dat" u ($1/epsilon):2 smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic {/Symbol b}(E/{/Symbol e})}"
+plot    "beta_smoothed.dat" u ($1/epsilon/numatoms):2 w l lt 1 lw 6 lc rgb "gray" title "",\
+ "beta_smoothed.dat" u ($1/epsilon/numatoms):2 smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic {/Symbol b}(E/{/Symbol e})}"
 
 #plot    "beta.dat" u 1:2 w l lt 1 lw 4 lc rgb "black" title "{/Times-Italic {/Symbol b}(E/{/Symbol e})}"#,\
 

@@ -39,6 +39,13 @@ for eafi in `ls RG2*.dat`; do
 	echo " file: [ ${eafi}_FIC.eps ] created. ;-)"
 done
 
+for eafi in `ls EnerBF*.dat`; do
+	cp $eafi tempEnerBF.dat
+	gnuplot < draw_EBF.gpl
+	mv tempEnerBF.eps ${eafi}.eps
+	echo " file: [ ${eafi}.eps ] created. ;-)"
+done
+
 for eafi in `ls EnerLJ*.dat`; do
 	cp $eafi tempEnerLJ.dat
 	gnuplot < draw_ELJ.gpl

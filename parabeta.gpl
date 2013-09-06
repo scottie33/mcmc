@@ -1,6 +1,8 @@
- emin=-292.88
- emax=79.92
- bmax=13.4101
- bmin=-0.0523878
- epsilon=1
- sigma=1
+ emin=-35.96
+ emax=39.992
+ bmax=121.134
+ bmin=0.0122305
+ epsilon=0.125
+ bondlen=1
+ sigma=1.26
+ numatoms=64

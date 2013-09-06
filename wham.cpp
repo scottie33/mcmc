@@ -24,14 +24,15 @@ void smoothArray(const double *in, double *out, long N, int n) {
 }
 
 int main(int argc, char** argv) {
-	if(argc<5) {
-		cout<<" cli: wham smoothingsteps epsilon sigma N"<<endl;
+	if(argc<6) {
+		cout<<" cli: wham smoothingsteps epsilon bondlen sigma N"<<endl;
 		exit(-1);
 	}
 	int smoothsteps=atoi(argv[1]);
 	double epsilon=atof(argv[2]);
-	double sigma=atof(argv[3]);
-	double NumAtoms=atof(argv[4]);
+	double bondlen=atof(argv[3]);
+	double sigma=atof(argv[4]);
+	double NumAtoms=atof(argv[5]);
 	int ie=0;
 	int rs=0;
 	int nrep=0;
@@ -351,11 +352,13 @@ int main(int argc, char** argv) {
 	entgpl_stream<<" smin="<<tempmin<<endl;
 	entgpl_stream<<" smax="<<tempmax<<endl;
 	entgpl_stream<<" epsilon="<<epsilon<<endl;
+	entgpl_stream<<" bondlen="<<bondlen<<endl;
 	entgpl_stream<<" sigma="<<sigma<<endl;
 	entgpl_stream<<" numatoms="<<NumAtoms<<endl;
 	entgpl_stream.close();
-	system("gnuplot draw_entropy.gpl");
-	cout<<" now you may check [ entropy.eps ]. "<<endl;
+	if(system("gnuplot draw_entropy.gpl")) {
+		cout<<" now you may check [ entropy.eps ]. "<<endl;
+	}
 
 	///////////// beta calc start //////////////
 	double* _PARA_beta;
@@ -441,10 +444,13 @@ int main(int argc, char** argv) {
 	//betgpl_stream<<" bmax="<<(_PARA_beta[MiddleIndex_1]-_PARA_beta[nene-1])*1.5+_PARA_beta[nene-1]<<endl;
 	betgpl_stream<<" bmin="<<tempmin<<endl;
 	betgpl_stream<<" epsilon="<<epsilon<<endl;
+	betgpl_stream<<" bondlen="<<bondlen<<endl;
 	betgpl_stream<<" sigma="<<sigma<<endl;
+	betgpl_stream<<" numatoms="<<NumAtoms<<endl;
 	betgpl_stream.close();
-	system("gnuplot draw_beta.gpl");
-	cout<<" now you may check [ beta.eps ]. "<<endl;
+	if(system("gnuplot draw_beta.gpl")) {
+		cout<<" now you may check [ beta.eps ]. "<<endl;
+	}
 
 	//free: temp memory:
 	delete[] Fm;

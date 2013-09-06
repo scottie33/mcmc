@@ -2537,9 +2537,7 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 					_BOND_length.pArray[ep_sig_x][ep_sig_y],
 					_BOND_length2.pArray[ep_sig_x][ep_sig_y], 
 					_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y],
-					_SIGMAWELL2_eachres.pArray[ep_sig_x][ep_sig_y], temp_sig6, 
-					_LAMBDA_eachres.pArray[ep_sig_x][ep_sig_y],
-					_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y])<<"\n";
+					_SIGMAWELL2_eachres.pArray[ep_sig_x][ep_sig_y], temp_sig6)<<"\n";
 			}
 			outener.close();
 			if(system("gnuplot < draw.gpl")) {};
@@ -2754,14 +2752,13 @@ bool cmc::make_change() {
 
 					r2max=min((dd_sqrt+ee), _RMAX.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]);
 					r2min=max(fabs(dd_sqrt-ee), _RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]);
-					/*ee=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-1]]
-					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-1]];
-					ff=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]
-					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]];*/
-					if(r2max>r2min) {
-					//if( (ee+ff>dd_sqrt) && (fabs(ee-ff)<dd_sqrt) ) {
+					if(r2max>=r2min) {
+						//cout<<" dd="<<dd_sqrt<<", ee="<<ee<<", r2max="<<r2max<<", r2min="<<r2min<<endl;
 						ff=r2min+rand_seed(iseed_len1)*(r2max-r2min);
-					} else { //ee too short. change it. */
+						//cout<<ff<<endl;
+						////getchar();
+						//if(ee>)
+					} else { //ee too short. change it.
 						//ff=r2max;
 						//ee=dd_sqrt
 						/*cout<<" i="<<_INDEX_chosen<<endl;
@@ -2772,7 +2769,6 @@ bool cmc::make_change() {
 						cout<<" rmin="<<_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]<<endl;
 						cout<<" vs.. "<<fabs(dd_sqrt-ee)<<endl;
 						cout<<" error: r2max="<<r2max<<"; r2min="<<r2min<<endl;*/
-					//if( ((ee+ff)<dd_sqrt) || (fabs(ee-ff)>dd_sqrt) ) {
 						_MC_NUM_FIL_stat[_INDEX_TEMPERATURE]+=1.0;
 						return false; 
 					}
@@ -2819,58 +2815,21 @@ bool cmc::make_change() {
 						vecDC[0]=vecDC[0]*tl/len_vecDC;
 						vecDC[1]=vecDC[1]*tl/len_vecDC;
 						vecDC[2]=vecDC[2]*tl/len_vecDC;
-						
-						dd_sqrt=sin_Omega/dd_sqrt; //not sqrt(d) but for the convenience for next step calc;
-						_XX[_INDEX_chosen]=_XX[_INDEX_chosen-1]+uc+vecDC[0]*cos_Omega+(dc[1]*vecDC[2]-dc[2]*vecDC[1])*dd_sqrt;
-						_YY[_INDEX_chosen]=_YY[_INDEX_chosen-1]+vc+vecDC[1]*cos_Omega+(dc[2]*vecDC[0]-dc[0]*vecDC[2])*dd_sqrt;
-						_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-1]+wc+vecDC[2]*cos_Omega+(dc[0]*vecDC[1]-dc[1]*vecDC[0])*dd_sqrt;
-					} else {
-						//uc=dc[0]*factor+_XX[_INDEX_chosen-1];
-						//vc=dc[1]*factor+_YY[_INDEX_chosen-1];
-						//wc=dc[2]*factor+_ZZ[_INDEX_chosen-1];
-						
-						TempBX=dc[0]*(1.0-factor);
-						TempBY=dc[1]*(1.0-factor);
-						TempBZ=dc[2]*(1.0-factor);
+					} 
+				}
+				dd_sqrt=sin_Omega/dd_sqrt; //not sqrt(d) but for the convenience for next step calc;
 
-						Len_CB_xy_2=TempBX*TempBX+TempBY*TempBY;
-						Len_CB_xy=sqrt(Len_CB_xy_2);
-						Len_CB=sqrt(Len_CB_xy_2+TempBZ*TempBZ);
-
-						if( fabs(Len_CB_xy) < 1e-12 ) {
-							sin_PHI=1.0;
-							cos_PHI=0.0;
-							if( fabs(Len_CB) < 1e-12 ) {
-								sin_THETA=1.0;
-								cos_THETA=0.0;
-							} else {						
-								sin_THETA=Len_CB_xy/Len_CB;
-								cos_THETA=TempBZ/Len_CB;
-							}
-						} else {
-							sin_PHI=TempBY/Len_CB_xy;
-							cos_PHI=TempBX/Len_CB_xy;
-							sin_THETA=Len_CB_xy/Len_CB;
-							cos_THETA=TempBZ/Len_CB;
-						}
-
-						cos_Omega=cos_Omega*tl;
-						cos_THETA=cos_THETA*cos_Omega;
-						sin_Omega=sin_Omega*tl;
-						_XX[_INDEX_chosen]=_XX[_INDEX_chosen-1] + uc + cos_PHI*cos_THETA - sin_PHI*sin_Omega;
-						_YY[_INDEX_chosen]=_YY[_INDEX_chosen-1] + vc + sin_PHI*cos_THETA + cos_PHI*sin_Omega;
-						_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-1] + wc - sin_THETA*cos_Omega;
-					}
-				} else { // with bond fluctuation taken into consideration;
-					dd_sqrt=sin_Omega/dd_sqrt; //not sqrt(d) but for the convenience for next step calc;
+				//coorRES=Add_p(C_p(cos_Omega,vecDC), C_p(sin_Omega/sqrt(dd), p_X_p(dc, vecDC)));
+				if(len_vecDC>1e-12) {
 					_XX[_INDEX_chosen]=_XX[_INDEX_chosen-1]+uc+vecDC[0]*cos_Omega+(dc[1]*vecDC[2]-dc[2]*vecDC[1])*dd_sqrt;
 					_YY[_INDEX_chosen]=_YY[_INDEX_chosen-1]+vc+vecDC[1]*cos_Omega+(dc[2]*vecDC[0]-dc[0]*vecDC[2])*dd_sqrt;
 					_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-1]+wc+vecDC[2]*cos_Omega+(dc[0]*vecDC[1]-dc[1]*vecDC[0])*dd_sqrt;
+				} else {
+					_MC_NUM_FIL_stat[_INDEX_TEMPERATURE]+=1.0;
+					return false; 
 				}
-
 				
-				
-				/*
+				/**/
 				double tempee=(_XX[_INDEX_chosen]-_XX[_INDEX_chosen-1])*(_XX[_INDEX_chosen]-_XX[_INDEX_chosen-1])
 								+(_YY[_INDEX_chosen]-_YY[_INDEX_chosen-1])*(_YY[_INDEX_chosen]-_YY[_INDEX_chosen-1])
 								+(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen-1])*(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen-1]);
@@ -2906,7 +2865,7 @@ bool cmc::make_change() {
 					//cout<<"vc="<<vc<<endl;
 					//cout<<"wc="<<wc<<endl;
 					exit(LOGICERROR);
-				}*/
+				}
 				
 			} else {// if atom is at the front or at the end of the chain; 
 				THETA=asin(rand_seed(iseed_angle)*2.0-1.0)+_PI_half;
@@ -3561,9 +3520,7 @@ void cmc::calc_energy_chosen_atom() {
 					_BOND_length2.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_SIGMAWELL2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
+				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 				//enumer++;
 			} else if (_TYPE_atom_ind_real == 1) { 
 				tempind=_INDEX_chosen-1;
@@ -3574,9 +3531,7 @@ void cmc::calc_energy_chosen_atom() {
 					_BOND_length2.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_SIGMAWELL2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
+				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 		    } else {
 				tempind=_INDEX_chosen+1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
@@ -3586,9 +3541,7 @@ void cmc::calc_energy_chosen_atom() {
 					_BOND_length2.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_SIGMAWELL2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
+				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 				
 				tempind=_INDEX_chosen-1;
 				//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
@@ -3598,9 +3551,7 @@ void cmc::calc_energy_chosen_atom() {
 					_BOND_length2.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_EPSILON_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
 					_SIGMAWELL2_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _LAMBDA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]],
-				    _SIGMA_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
+				    _SIGMA6_eachres.pArray[_Res_chosen][_INDEX_RES_ATM[tempind]]);
 			}
 		}
 		//cout<<_INDEX_chosen<<"::"<<tempind<<endl;
@@ -4170,9 +4121,7 @@ double cmc::calc_energy() {                       //the total energy;
 						_BOND_length2.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
 						_EPSILON_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
 						_SIGMAWELL2_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
-					    _SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
-					    _LAMBDA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]],
-					    _SIGMA_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
+					    _SIGMA6_eachres.pArray[_INDEX_RES_ATM[tempind_x]][_INDEX_RES_ATM[tempind_y]]);
 					//enumer++;
 					//cout<<index_atm+j<<"<->"<<index_atm+j+1<<endl;
 					//cout<<tempind_x<<" "<<sqrt(_DIS2_eachatom.pArray[tempind_x][tempind_y])<<endl;
@@ -4530,11 +4479,6 @@ void cmc::initialization() {
     init_energy();
     chck_bond_len();//secure!!
     srand(_PROC_ID*(unsigned)time(NULL));
-    tell_procid(); if(_FLAG_pivot<_TEMPERATURE) {
-    	cout<<" run with pivot;"<<endl;
-    } else {
-    	cout<<" run with orthogonal move-trial;"<<endl;
-    }
     run_with_stepnumber(_NUM_atoms*1000); //minimization
     init_statistic();
 }

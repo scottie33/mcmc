@@ -140,14 +140,21 @@ private:
 	int _SIZE_memo;
 	///////////////for bond fluctuation ///////////
 	bool _BF_flag;
+	double _BF_coeff;
+	double _BF_scale;
 	bool _AG_flag;
 	bool _DH_flag;
 	CMyArray<double> _BOND_length;
+	CMyArray<double> _BOND_length2;
 	CMyArray<double> _PARA_KB;
 	CMyArray<double> _BOND_delta;
 	CMyArray<double> _RMIN;
 	CMyArray<double> _RMAX;
+	CMyArray<double> _RMIN2;
+	CMyArray<double> _RMAX2;
 	CMyArray<double> _DDELTA;
+	CMyArray<double> _DDELTA_ea;
+	double tempddelta;
 	CMyArray<double> _PARA_KA;
 	CMyArray<double> _THETAZERO;
 	CMyArray<double> _THETAZERO_cos;
@@ -162,6 +169,8 @@ private:
 	CMyArray<double> _SIGMA_eachres;
 	CMyArray<double> _SIGMA2_eachres;
 	CMyArray<double> _SIGMADIS_eachres;
+	CMyArray<double> _SIGMAWELL_eachres;
+	CMyArray<double> _SIGMAWELL2_eachres;
 	CMyArray<double> _SIGMA3_eachres;
 	CMyArray<double> _SIGMA6_eachres;
 	CMyArray<double> _SIGMA9_eachres;
@@ -500,10 +509,12 @@ private:
 	//ofstream* _rg2_stream;
 	//////////////
 	bool _FLAG_ener;
+	double _FLAG_pivot;
 	//double* _rhead2;     //for each selection...
 	//ofstream* _rh2_stream;
 	//ofstream _ener_stream;
 	inline void statistic();
+	inline void getrealrate();
 	
 	int stat_i;
 	int stat_j;
@@ -684,15 +695,26 @@ private:
 	double _onethird1;
 	double _onethird2;
 	double _movelength;
+	double* _movelength_ea;
+	//double* _movelength_pv;
+	double _movelength_temp;
 	int iseed_zero;
 	int iseed_len1;
+	int iseed_len2;
+	int iseed_len3;
 	int iseed_angle;
 	int iseed_index;
 	int iseed_rand;	
 
 	double _MC_NUM_TOT; //total;
 	double _MC_NUM_SUC; //succeed; ==1
-	double _MC_NUM_FIL; //fail;    ==0|-1
+	double* _MC_NUM_TOT_stat; // total;
+	double* _MC_NUM_SUC_stat; // succeed; ==1
+	double* _MC_NUM_TOT_all; // total;
+	double* _MC_NUM_SUC_all; // succeed; ==1
+	double _MC_NUM_FIL; //fail;    -1
+	double* _MC_NUM_FIL_stat; //fail;    -1
+	double* _MC_NUM_FIL_all; //fail;    -1
 	double _MC_NUM_STT; //statistic;
 	//void fout_ratio();
 	//void cout_parameters();
@@ -708,6 +730,8 @@ void cmc::rand_init(const int procid) {
 	//different process has different seeds
 	iseed_zero=(-2)*(procid+1)-1;
 	iseed_len1=(-14)*(procid+1)-1;
+	iseed_len2=(-26)*(procid+1)-1;
+	iseed_len3=(-34)*(procid+1)-1;
 	iseed_angle=(-6)*(procid+1)-1;
 	iseed_index=(-10)*(procid+1)-1;
 	iseed_rand=(-22)*(procid+1)-1;
@@ -715,6 +739,8 @@ void cmc::rand_init(const int procid) {
 void cmc::rand_update(const int procid) {
     iseed_zero=(-2)*(procid+1)-1;
 	iseed_len1=(-14)*(procid+1)-1;
+	iseed_len2=(-26)*(procid+1)-1;
+	iseed_len3=(-34)*(procid+1)-1;
 	iseed_angle=(-6)*(procid+1)-1;
 	iseed_index=(-10)*(procid+1)-1;
 	iseed_rand=(-22)*(procid+1)-1;

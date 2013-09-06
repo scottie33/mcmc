@@ -99,7 +99,8 @@ set key spacing 1.5
 
 if (wdGBP!=0) plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 3 lc rgb "gray",\
                    (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 8 lc rgb "gray",\
-                   fn.'.nrg' u ($1/sigma_a):($2/epsilon_a) title "{/Times-Italic u(r_{ij})}" w l lt 1 lw 8 lc rgb "brown",\
+                   fn.'.nrg' u ($1/sigma_a):($2/epsilon_a) title "{/Times-Italic u(r_{i,j})}" w l lt 1 lw 5 lc rgb "brown",\
+                   fn.'.nrg' u ($1/sigma_a):($3/epsilon_a) title "{/Times-Italic u_{B}(r_{i,j})}" w l lt 5 lw 2 lc rgb "blue",\
                    (ljc(x/sigma)/epsilon) title "{/Times-Italic P(r)}" w l lt 1 lw 3 lc rgb "black";\
 else plot (f(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij})}" w l lt 2 lw 3 lc rgb "gray",\
           (lj(x/sigma)/epsilon) title "{/Times-Italic u^{LJ}(r_{ij}) - u^{LJ}(r_{cut;ij})}" w l lt 1 lw 8 lc rgb "gray",\

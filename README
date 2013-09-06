@@ -51,4 +51,9 @@ calcdis.py
 getcvfromprob.py
 oldgetPE.py [do not use this any more]
 
+./drawacc.bash
+./showdisfluc.bash [bonddistance.tcl] [draw_bond....gpl]
+./distributeCONF.bash
+
+
 

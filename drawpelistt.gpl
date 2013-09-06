@@ -21,8 +21,8 @@ set yrange [0:]
 
 set ytics nomirror 
 
-xmin=emin/epsilon
-xmax=emax/epsilon
+xmin=emin/epsilon/numatoms
+xmax=emax/epsilon/numatoms
 
 set xrange [xmin:xmax]
 
@@ -34,8 +34,11 @@ set key spacing 1.5
 #set key box
 #set key outs
 
-plot 'PE_1.dat' u ($1/epsilon):2  w l lt 1 lw 1  title '{/Times-Italic k_{B}T=0.4}',\
- 'PE_2.dat' u ($1/epsilon):2  w l lt 2 lw 1  title '{/Times-Italic k_{B}T=0.55}',\
- 'PE_3.dat' u ($1/epsilon):2  w l lt 3 lw 1  title '{/Times-Italic k_{B}T=0.5}'
+plot 'PE_1.dat' u ($1/epsilon/numatoms):2  w l lt 1 lw 1  title '{/Times-Italic k_{B}T=0.5}',\
+ 'PE_2.dat' u ($1/epsilon/numatoms):2  w l lt 2 lw 1  title '{/Times-Italic k_{B}T=1.0}',\
+ 'PE_3.dat' u ($1/epsilon/numatoms):2  w l lt 3 lw 1  title '{/Times-Italic k_{B}T=1.5}',\
+ 'PE_4.dat' u ($1/epsilon/numatoms):2  w l lt 4 lw 1  title '{/Times-Italic k_{B}T=2.0}',\
+ 'PE_5.dat' u ($1/epsilon/numatoms):2  w l lt 5 lw 1  title '{/Times-Italic k_{B}T=3.0}',\
+ 'PE_6.dat' u ($1/epsilon/numatoms):2  w l lt 6 lw 1  title '{/Times-Italic k_{B}T=4.0}'
 
 unset multiplot

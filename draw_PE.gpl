@@ -1,9 +1,10 @@
 
 reset
 
+load "paraentropy.gpl"
 load "parape.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
 set term post enh size 8,4.5 color
 set out 'PE.eps'
 
@@ -11,9 +12,9 @@ set out 'PE.eps'
 set multiplot
 #unset key
 #set title 
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic P(E/{/Symbol e})}' font ",20"#UTF-8,16"# tc rgb "#880000"
+set ylabel '{/Times-Italic P(E/{/Symbol e}/N)}' font ",20"#UTF-8,16"# tc rgb "#880000"
 set y2label '{/Times-Italic MCE-FE}' font ",20" rotate by -90 #UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
 smax=(smax-smin)*1.1+smin
@@ -39,9 +40,9 @@ set key box
 #plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
 
 tempstr=sprintf("%.2f",1/valTemp)
-plot  "PE.dat" u ($1/epsilon):($3==0?$2:$3) w l lt 1 lw 6 lc rgb "gray" title "",\
-   "PE.dat" u ($1/epsilon):2 w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic P(E/{/Symbol e}, {/Symbol b}}=".tempstr.")",\
-   "PE.dat" u ($1/epsilon):($4/epsilon) axis x1y2 w l lt 2 lw 1 lc rgb "black" title "{/Times-Italic Free Energy}"
+plot  "PE.dat" u ($1/epsilon/numatoms):($3==0?$2:$3) w l lt 1 lw 6 lc rgb "gray" title "",\
+   "PE.dat" u ($1/epsilon/numatoms):2 w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic P(E/{/Symbol e}/N, {/Symbol b}}=".tempstr.")",\
+   "PE.dat" u ($1/epsilon/numatoms):($4/epsilon) axis x1y2 w l lt 2 lw 1 lc rgb "black" title "{/Times-Italic Free Energy}"
 
 
 unset multiplot

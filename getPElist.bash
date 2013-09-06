@@ -16,9 +16,9 @@ for i in $@;do
 	mv PE.dat PE_$num.dat
 	
 	if [ $num -eq 1 ]; then
-		echo -n "plot 'PE_$num.dat' u (\$1/epsilon):2  w l lt $num lw 1  title '{/Times-Italic k_{B}T=$i}'" >> drawpelistt.gpl
+		echo -n "plot 'PE_$num.dat' u (\$1/epsilon/numatoms):2  w l lt $num lw 1  title '{/Times-Italic k_{B}T=$i}'" >> drawpelistt.gpl
 	else
-		echo -n " 'PE_$num.dat' u (\$1/epsilon):2  w l lt $num lw 1  title '{/Times-Italic k_{B}T=$i}'" >> drawpelistt.gpl
+		echo -n " 'PE_$num.dat' u (\$1/epsilon/numatoms):2  w l lt $num lw 1  title '{/Times-Italic k_{B}T=$i}'" >> drawpelistt.gpl
 	fi
 	if [ $num -ne $# ]; then
 		echo ",\\" >> drawpelistt.gpl

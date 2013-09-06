@@ -2,13 +2,13 @@
 reset
 
 load "paraentropy.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
 set term post enh size 8,4.5 color
 set out 'tempRG2.eps'
 
 set multiplot
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
 set ylabel '{/Times-Italic Radius of Gyration/{/Symbol s}}' font ",18"#font "UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
 smax=(smax-smin)*1.1+smin
@@ -25,23 +25,23 @@ set mytics 5
 #set grid xtics lt 0 lw 1 lc rgb "#0000ff"
 set key left
 
-plot "tempRG2.dat" u ($1/epsilon):(sqrt($3)/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
-"tempRG2.dat" u ($1/epsilon):(sqrt($3)/sigma) smooth unique w l lt 2 lw 1 lc rgb "gray" title "{/Times-Italic RG_{plot}}",\
-"tempRG2.dat" u ($1/epsilon):(sqrt($2)/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
-"tempRG2.dat" u ($1/epsilon):(sqrt($2)/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic RG(E)/{/Symbol s}}" 
+plot "tempRG2.dat" u ($1/epsilon/numatoms):(sqrt($3)/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
+"tempRG2.dat" u ($1/epsilon/numatoms):(sqrt($3)/sigma) smooth unique w l lt 2 lw 1 lc rgb "gray" title "{/Times-Italic RG_{plot}}",\
+"tempRG2.dat" u ($1/epsilon/numatoms):(sqrt($2)/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
+"tempRG2.dat" u ($1/epsilon/numatoms):(sqrt($2)/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic RG(E)/{/Symbol s}}" 
 
 unset multiplot
 
 reset
 
 load "paraentropy.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
 set term post enh size 8,4.5 color
 set out 'tempFIC.eps'
 
 set multiplot
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"#font "Arial,16"# tc rgb "#0000ff"
 set ylabel '{/Times-Italic RG(E)^2/nl^2}' font ",18"#font "UTF-8,16"# tc rgb "#880000"
 #set ylabel '{/Times-Italic C_{n}/C_{/Symbol \245}}' font ",18"#font "UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
@@ -59,8 +59,8 @@ set mytics 5
 #set grid xtics lt 0 lw 1 lc rgb "#0000ff"
 set key left
 
-plot "tempRG2.dat" u ($1/epsilon):(6*$2/numatoms/sigma/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
-"tempRG2.dat" u ($1/epsilon):(6*$2/numatoms/sigma/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic RG^2(E)/nl^2"
+plot "tempRG2.dat" u ($1/epsilon/numatoms):(6*$2/numatoms/sigma/sigma) w l lt 1 lw 6 lc rgb "gray" title "",\
+"tempRG2.dat" u ($1/epsilon/numatoms):(6*$2/numatoms/sigma/sigma) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic RG^2(E)/nl^2"
 
 unset multiplot
 

@@ -2,8 +2,8 @@
 reset
 
 load "paraentropy.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
 set term post enh size 8,4.5 color
 set out 'tempEnerLJ.eps'
 coeff=1
@@ -12,9 +12,9 @@ load "temp.gpl"
 set multiplot
 #unset key
 #set title 
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"# tc rgb "#0000ff"
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"# tc rgb "#0000ff"
 #set encoding default
-set ylabel '{/Times-Italic Energy/{/Symbol e}}'  font ",20"#font "UTF-8,16"# tc rgb "#880000"
+set ylabel '{/Times-Italic Energy/{/Symbol e}/N}'  font ",20"#font "UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
 smax=(smax-smin)*1.1+smin
 #oset yrange [smin:smax]
@@ -35,21 +35,21 @@ set key left
 #plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
 
 #set title font ",20"
-plot "tempEnerLJ.dat" u ($1/epsilon):($2/epsilon) w l lt 1 lw 6 lc rgb "gray" title "",\
-"tempEnerLJ.dat" u ($1/epsilon):($2/epsilon) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Energy/{/Symbol e}}"
+plot "tempEnerLJ.dat" u ($1/epsilon/numatoms):($2/epsilon/numatoms) w l lt 1 lw 6 lc rgb "gray" title "",\
+"tempEnerLJ.dat" u ($1/epsilon/numatoms):($2/epsilon/numatoms) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Energy/{/Symbol e}}"
 unset multiplot
 
 reset
 
 load "paraentropy.gpl"
-emin=emin/epsilon
-emax=emax/epsilon
+emin=emin/epsilon/numatoms
+emax=emax/epsilon/numatoms
 set term post enh size 8,4.5 color
 set out 'Contacts.eps'
 set multiplot
 #unset key
 #set title 
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",20"# tc rgb "#0000ff"
+set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"# tc rgb "#0000ff"
 #set encoding default
 set ylabel '{/Times-Italic CN_{eff}}'  font ",20"#font "UTF-8,16"# tc rgb "#880000"
 set xrange [emin:emax]
@@ -68,8 +68,8 @@ set mytics 5
 #set style fill transparent solid 0.1 noborder
 set key left
 
-plot "tempEnerLJ.dat" u ($1/epsilon):(-$2/epsilon/coeff) w l lt 1 lw 6 lc rgb "gray" title "",\
-"tempEnerLJ.dat" u ($1/epsilon):(-$2/epsilon/coeff) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Effective Contact Number}"
+plot "tempEnerLJ.dat" u ($1/epsilon/numatoms):(-$2/epsilon/numatoms/coeff) w l lt 1 lw 6 lc rgb "gray" title "",\
+"tempEnerLJ.dat" u ($1/epsilon/numatoms):(-$2/epsilon/numatoms/coeff) smooth unique w l lt 1 lw 2 lc rgb "black" title "{/Times-Italic Effective Contact Number}"
 unset multiplot
 
 

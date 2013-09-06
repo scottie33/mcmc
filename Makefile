@@ -1,6 +1,6 @@
 CC=mpicxx #-fopenmp
-#CFLAGS=-c -Wall -O3
-CFLAGS=-c -Wall -O2
+CFLAGS=-c -Wall -O3
+#CFLAGS=-c -Wall -O2
 #CFLAGS=-fopenmp -c -Wall -O3
 #CFLAGS=-c -Wall
 #CFLAGS=-c

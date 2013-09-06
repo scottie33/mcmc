@@ -81,7 +81,7 @@ public:
 	void make_mapping(); // from _XX, _YY, _ZZ to the vector of atoms.
 	void make_mapping_wrap(); // from _XX, _YY, _ZZ to the vector of atoms.
 	bool chck_bond_len();
-    void fout_conformation(bool CHCK_BOND_LEN_OR_NOT);
+    void fout_conformation(int CHCK_BOND_LEN_OR_NOT);
 	void memo_free();
 	//////////////////////////////////////////////////////////////////////////
 	CMolecule _system_;
@@ -155,6 +155,7 @@ private:
 	CMyArray<double> _DDELTA;
 	CMyArray<double> _DDELTA_ea;
 	double tempddelta;
+	int temprandom;
 	CMyArray<double> _PARA_KA;
 	CMyArray<double> _THETAZERO;
 	CMyArray<double> _THETAZERO_cos;
@@ -616,6 +617,7 @@ private:
 	double factor;
 	double* tc;
 	double tl;
+	double planeD;
 	double _PI_single;
 	double _PI_double;
 	double _PI_half;

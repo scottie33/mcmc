@@ -2,7 +2,7 @@
 ;PPTYPE: 1 for hardsphere; 2 for normal LJ; 3 for Morse ~ potential; 4 for 24-12 LJ potential;
 
 [PPTYPE] 
-2 2
+3 2
 2 2
 [;PPTYPE]
 
@@ -17,12 +17,12 @@
 [;SIGMA]
 
 [LAMBDA]
-2 4
+15 4
 4 4
 [;LAMBDA]
 
 [RCUT]
-2.1 10.0
+1.50 10.0
 10.0 10.0
 [;RCUT]
 

@@ -32,7 +32,7 @@ public:
 							int someresidue_iname,
 							double xx_coordinate, double yy_coordinate, double zz_coordinate,
 							double ZOOMFACTOR);
-	void readpdbinfo(const string atominfo);
+	void readpdbinfo(const string atominfo, const string atominfo_xyz);
 	void writepdbinfo(ofstream &targetstream, ofstream &targetstream_xyz);
 	bool operator<(const CAtom &tatom) const {//for sorting atoms.
 		return atomindex<tatom.atomindex;
@@ -69,7 +69,7 @@ public:
 							double ZOOMFACTOR,
 							bool sortingflag);
 	void add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sortingflag);
-	void readpdbinfo(const string atominfo, double ZOOMFACTOR, bool sortingflag);
+	void readpdbinfo(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag);
 	bool operator<(const CResidue &tresidue) const {//for sorting residues.
 		return residueiname<tresidue.residueiname;
 	}
@@ -100,7 +100,7 @@ public:
 							double ZOOMFACTOR,
 							bool sortingflag);
 	void add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sortingflag);
-	void readpdbinfo(const string atominfo, double ZOOMFACTOR, bool sortingflag);
+	void readpdbinfo(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag);
 	void writepdbinfo(ofstream &targetstream, ofstream &targetstream_xyz);
 	bool operator<(const CChain &tchain) const {//for sorting chains.
 		return chainname<tchain.chainname;
@@ -133,7 +133,7 @@ public:
 	void writepdbinfo(const char* ftarget, bool ifverbose);
 	void writelmpinfo(const char* ftarget);
 	//void sort();
-	void readpdbinfo_str(const string atominfo, double ZOOMFACTOR, bool sortingflag);
+	void readpdbinfo_str(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag);
 	void readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortingflag, bool ifverbose);
 	//void mapping_atom_2PDB(const int index_in_array);
 	//void mapping_atom_2CHN();

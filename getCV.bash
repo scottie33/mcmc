@@ -43,7 +43,7 @@ fi
 
 touch CECV.dat
 tempnum=1
-cat _temperaturelist.pls | while read line; do
+cat $1 | while read line; do
 	let tempnum=$tempnum+1
 	python getcvfromprob.py probability_each.dat $tempnum $line
 	cat OET.dat >> CECV.dat

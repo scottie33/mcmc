@@ -44,7 +44,7 @@ void CAtom::add_arbitrary_info(string someatom_type,
 	z_coordinate=zz_coordinate*ZOOMFACTOR;
 }
 /////////////////////////
-void CAtom::readpdbinfo(const string atominfo) {
+void CAtom::readpdbinfo(const string atominfo, const string atominfo_xyz) {
 	type=BFilter( atominfo.substr(0, 6) );
 	atomindex=atoi( BFilter(atominfo.substr(6, 5)).c_str() );
 	atomname_chemical=BFilter(atominfo.substr(12, 2));
@@ -56,6 +56,11 @@ void CAtom::readpdbinfo(const string atominfo) {
 	x_coordinate=atof( BFilter( atominfo.substr(30, 8) ).c_str() );
 	y_coordinate=atof( BFilter( atominfo.substr(38, 8) ).c_str() );
 	z_coordinate=atof( BFilter( atominfo.substr(46, 8) ).c_str() );
+
+	x_coordinate=atof( BFilter( atominfo_xyz.substr(0,  30) ).c_str() );
+	y_coordinate=atof( BFilter( atominfo_xyz.substr(31, 30) ).c_str() );
+	z_coordinate=atof( BFilter( atominfo_xyz.substr(62, 30) ).c_str() );
+
 }
 /////////////////////////
 void CAtom::writepdbinfo(ofstream &targetstream, ofstream &targetstream_xyz) {
@@ -141,9 +146,9 @@ void CResidue::add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sortin
 					   sortingflag);
 }
 /////////////////////////
-void CResidue::readpdbinfo(const string atominfo, double ZOOMFACTOR, bool sortingflag) {
+void CResidue::readpdbinfo(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag) {
 	CAtom tempatom;
-	tempatom.readpdbinfo(atominfo);
+	tempatom.readpdbinfo(atominfo, atominfo_xyz);
 	add_arbitrary_info(tempatom, ZOOMFACTOR, sortingflag);
 }
 /////////////////////////
@@ -250,9 +255,9 @@ void CChain::add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sortingf
 					   sortingflag);
 }
 /////////////////////////
-void CChain::readpdbinfo(const string atominfo, double ZOOMFACTOR, bool sortingflag) {
+void CChain::readpdbinfo(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag) {
 	CAtom tempatom;
-	tempatom.readpdbinfo(atominfo);
+	tempatom.readpdbinfo(atominfo, atominfo_xyz);
 	add_arbitrary_info(tempatom, ZOOMFACTOR, sortingflag);
 }
 /////////////////////////
@@ -401,9 +406,9 @@ void CMolecule::add_arbitrary_info(CAtom someatom, double ZOOMFACTOR, bool sorti
 					   sortingflag);
 }
 /////////////////////////
-void CMolecule::readpdbinfo_str(const string atominfo, double ZOOMFACTOR, bool sortingflag) {
+void CMolecule::readpdbinfo_str(const string atominfo, const string atominfo_xyz, double ZOOMFACTOR, bool sortingflag) {
 	CAtom tempatom;
-	tempatom.readpdbinfo(atominfo);
+	tempatom.readpdbinfo(atominfo, atominfo_xyz);
 	add_arbitrary_info(tempatom, ZOOMFACTOR, sortingflag);
 	//allatoms.push_back(tempatom);
 }
@@ -583,7 +588,7 @@ void CMolecule::readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortin
 		cout<<" Error: can not open file: "<<fmolname<<endl;
 		exit(IOERROR);
 	}
-	/*string TTStr=string(fmolname);
+	string TTStr=string(fmolname);
 	int TTSize=TTStr.size();
 	bool xyzinfoflag=false;
 	ifstream fmolecule_xyz( (TTStr.substr(0, TTSize-3)+string("xyz")).c_str() );
@@ -593,16 +598,23 @@ void CMolecule::readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortin
 	} else {
 		xyzinfoflag=true;
 		cout<<" with XYZ info: [ "<<TTStr.substr(0, TTSize-3)+string("xyz")<<" ]"<<endl;
-	}*/
+	}
 	int i=0;
 	string tempstr;
+	string tempstr_xyz;
 	//CAtom tempatom;
 	vector<string> tempvec;
 	vector<string> templist;
 	while(getline(fmolecule, tempstr)) {
+		
 		if( tempstr.substr(0, 4)==string("ATOM") || tempstr.substr(0, 6)==string("HETATM") ) {
 			//cout<<tempstr<<endl;
-			readpdbinfo_str(tempstr, ZOOMFACTOR, sortingflag);
+			if(getline(fmolecule_xyz, tempstr_xyz)) {
+			} else {
+				cout<<" < * > error, no enought xyz infor! exit!"<<endl;
+				exit(-1);
+			}
+			readpdbinfo_str(tempstr, tempstr_xyz, ZOOMFACTOR, sortingflag);
 		}
 		/*if( tempstr.substr(0, 6)==string("CONECT") ) {
 			templist.push_back(tempstr);

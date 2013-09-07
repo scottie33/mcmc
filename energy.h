@@ -6,8 +6,8 @@
 
 #define _MIN_DOUBLE     -1.7e308
 #define _MAX_DOUBLE      1.7e308
-#define _EMIN_DOUBLE     -1.7e5
-#define _EMAX_DOUBLE      1.7e5
+#define _EMIN_DOUBLE     -1.7e6
+#define _EMAX_DOUBLE      1.7e6
 #define KBT         1.00
 #define e		   -1.00
 #define E_x			1.00
@@ -47,9 +47,10 @@ inline double  Energy_BF(const double&  paraK, const double& dMd, const double& 
 	tempdis6=1.0-exp(-lambda*(tempdis2-SIGMA));
 	tempdis2=tempdis2-bondlen;
 	tempdis2=tempdis2*tempdis2/0.25;
-	if(tempdis2<1.0) {
+	if( tempdis2<(1.0-1e-12) ) {
 		return -0.125*paraK*log(1.0-tempdis2)+EPSILON*(tempdis6*tempdis6-1.0);
 	} else {
+		//return _EMAX_DOUBLE*EPSILON;
 		return _MAX_DOUBLE;
 	}
 }

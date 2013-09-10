@@ -101,7 +101,8 @@ cmc::cmc() {
 	_EINTlist=NULL;
 	_len_EINT=0;
 	_FLAG_ener=false;
-	_FLAG_pivot=1.0;
+	_FLAG_pivot=_MAX_DOUBLE;
+	_numerpivot=1e-12;
 	_FLAG_rg2=false;
 	_FLAG_dis=false;
 	stat_i=0; stat_j=0; stat_k=0; stat_size=0; stat_head=0; stat_tail=0; 
@@ -1651,10 +1652,11 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_len_OP, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_EINT, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-	if( !_BF_flag && (_FLAG_pivot>1e-12) ) {
+	if( !_BF_flag && (_FLAG_pivot>0.0) ) {
 		cout<<" error: "<<endl;
 		cout<<" _BF_flag="<<_BF_flag<<endl;
 		cout<<" _FLAG_pivot="<<_FLAG_pivot<<endl;
+		cout<<" _FLAG_pivot got to be negative: <0.0 "<<endl;
 		exit(LOGICERROR);
 	}
 
@@ -2612,9 +2614,10 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 }
 ///////////////////////////
 ///////////////////////////
-bool cmc::make_change() {
+inline bool cmc::make_change() {
 	if( _INDEX_chn_or_not ) {// if atom belongs to a chain;
-		if(_FLAG_pivot>_TEMPERATURE) { // not pivot algorithm;
+		_numerpivot+=1.0;
+		if( _numerpivot<_FLAG_pivot ) { // not pivot algorithm;
 		//if( (_INDEX_TEMPERATURE%2) != 0 ) {
 			if( _TYPE_atom_ind_real == 0 ) {
 				tempddelta=_movelength_ea[_INDEX_TEMPERATURE];
@@ -2697,6 +2700,7 @@ bool cmc::make_change() {
 				}
 			}
 		} else { // pivot algorithm;
+			_numerpivot=1e-12;
 			Omega=rand_seed(iseed_angle)*_PI_double;//*_movelength_pv[_INDEX_TEMPERATURE];
 			sin_Omega=sin(Omega);
 			cos_Omega=cos(Omega);	
@@ -2744,7 +2748,7 @@ bool cmc::make_change() {
 				vecDC[2]=ec[2]-wc;
 				//cout<<" e+f="<<sqrt(ee)+sqrt(ff)<<" d="<<sqrt(dd)<<endl;
 
-				if(_BF_flag) { // without bond fluctuation
+				/*if(_BF_flag) { // without bond fluctuation
 					len_vecDC=sqrt(vecDC[0]*vecDC[0]+vecDC[1]*vecDC[1]+vecDC[2]*vecDC[2]);
 					
 					//
@@ -2754,32 +2758,14 @@ bool cmc::make_change() {
 
 					r2max=min((dd_sqrt+ee), _RMAX.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]);
 					r2min=max(fabs(dd_sqrt-ee), _RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]);
-					/*ee=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-1]]
-					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-1]];
-					ff=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]
-					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]];*/
+					
 					if(r2max>r2min) {
-					//if( (ee+ff>dd_sqrt) && (fabs(ee-ff)<dd_sqrt) ) {
 						ff=r2min+rand_seed(iseed_len1)*(r2max-r2min);
-					} else { //ee too short. change it. */
-						//ff=r2max;
-						//ee=dd_sqrt
-						/*cout<<" i="<<_INDEX_chosen<<endl;
-						cout<<" d="<<dd_sqrt<<endl;
-						cout<<" e="<<ee<<endl;
-						cout<<" rmax="<<_RMAX.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]<<endl;
-						cout<<" vs.. "<<(dd_sqrt+ee)<<endl;
-						cout<<" rmin="<<_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen+1]]<<endl;
-						cout<<" vs.. "<<fabs(dd_sqrt-ee)<<endl;
-						cout<<" error: r2max="<<r2max<<"; r2min="<<r2min<<endl;*/
-					//if( ((ee+ff)<dd_sqrt) || (fabs(ee-ff)>dd_sqrt) ) {
+					} else { //ee too short. change it.
 						_MC_NUM_FIL_stat[_INDEX_TEMPERATURE]+=1.0;
 						return false; 
 					}
 
-					//if(dd_sqrt>ee+ff) {
-					//	cout<<"d>e+f truly happened"<<endl;
-					//}
 					ee=ee*ee;
 					ff=ff*ff;
 
@@ -2796,12 +2782,7 @@ bool cmc::make_change() {
 					}
 					
 					tl=sqrt(ee-dd*factor*factor);
-					/*cout<<" ee="<<ee<<" e="<<sqrt(ee)<<endl;
-					cout<<" ff="<<ff<<" f="<<sqrt(ff)<<endl;
-					cout<<" dd="<<dd<<" d="<<dd_sqrt<<endl;
-					cout<<" factor="<<factor<<endl;
-					cout<<" g= "<<factor*dd_sqrt<<endl;
-					cout<<" tl= "<<tl<<endl;*/
+					
 					if(tl!=tl) {//when e+f=d; tl=nan; this is important
 						tl=0.0;
 					}
@@ -2813,6 +2794,7 @@ bool cmc::make_change() {
 					//cout<<"uc="<<uc<<endl;
 					//cout<<"vc="<<vc<<endl;
 					//cout<<"wc="<<wc<<endl;
+
 
 					//vector DC -> ; DC = AC - AD ;  
 					if(len_vecDC>1e-12) {
@@ -2866,47 +2848,12 @@ bool cmc::make_change() {
 					_XX[_INDEX_chosen]=_XX[_INDEX_chosen-1]+uc+vecDC[0]*cos_Omega+(dc[1]*vecDC[2]-dc[2]*vecDC[1])*dd_sqrt;
 					_YY[_INDEX_chosen]=_YY[_INDEX_chosen-1]+vc+vecDC[1]*cos_Omega+(dc[2]*vecDC[0]-dc[0]*vecDC[2])*dd_sqrt;
 					_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-1]+wc+vecDC[2]*cos_Omega+(dc[0]*vecDC[1]-dc[1]*vecDC[0])*dd_sqrt;
-				}
-
-				
-				
-				/*
-				double tempee=(_XX[_INDEX_chosen]-_XX[_INDEX_chosen-1])*(_XX[_INDEX_chosen]-_XX[_INDEX_chosen-1])
-								+(_YY[_INDEX_chosen]-_YY[_INDEX_chosen-1])*(_YY[_INDEX_chosen]-_YY[_INDEX_chosen-1])
-								+(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen-1])*(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen-1]);
-				double tempff=(_XX[_INDEX_chosen]-_XX[_INDEX_chosen+1])*(_XX[_INDEX_chosen]-_XX[_INDEX_chosen+1])
-								+(_YY[_INDEX_chosen]-_YY[_INDEX_chosen+1])*(_YY[_INDEX_chosen]-_YY[_INDEX_chosen+1])
-								+(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen+1])*(_ZZ[_INDEX_chosen]-_ZZ[_INDEX_chosen+1]);
-				double tempdd=(_XX[_INDEX_chosen-1]-_XX[_INDEX_chosen+1])*(_XX[_INDEX_chosen-1]-_XX[_INDEX_chosen+1])
-								+(_YY[_INDEX_chosen-1]-_YY[_INDEX_chosen+1])*(_YY[_INDEX_chosen-1]-_YY[_INDEX_chosen+1])
-								+(_ZZ[_INDEX_chosen-1]-_ZZ[_INDEX_chosen+1])*(_ZZ[_INDEX_chosen-1]-_ZZ[_INDEX_chosen+1]);
-				if( (fabs(tempee-ee)>1e-6) || (fabs(tempff-ff)>1e-6) ) {
-					tell_procid();
-					cout<<endl;
-					cout<<_I_totalnum<<" :: "<<_I_eachstep<<endl;
-					cout<<_INDEX_chosen<<endl;
-					cout<<" veclen="<<sqrt(vecDC[0]*vecDC[0]+vecDC[1]*vecDC[1]+vecDC[2]*vecDC[2])<<endl;
-					cout<<" after "<<endl;
-					cout<<" tl_calc="<<sqrt(
-						(_XX[_INDEX_chosen-1]+uc-_XX[_INDEX_chosen])*(_XX[_INDEX_chosen-1]+uc-_XX[_INDEX_chosen])
-						+(_YY[_INDEX_chosen-1]+vc-_YY[_INDEX_chosen])*(_YY[_INDEX_chosen-1]+vc-_YY[_INDEX_chosen])
-						+(_ZZ[_INDEX_chosen-1]+wc-_ZZ[_INDEX_chosen])*(_ZZ[_INDEX_chosen-1]+wc-_ZZ[_INDEX_chosen]))<<endl;
-					cout<<" veclen="<<sqrt(vecDC[0]*vecDC[0]+vecDC[1]*vecDC[1]+vecDC[2]*vecDC[2])<<endl;
-					cout<<" g="<<sqrt(uc*uc+vc*vc+wc*wc)<<endl;
-					double realfactor=(tempee-tempff)/2.0/tempdd+0.5;
-					cout<<" realfactor="<<realfactor<<" factor="<<factor<<endl;
-					cout<<" real e="<<sqrt(tempee)<<" e="<<sqrt(ee)<<endl;
-					cout<<" real f="<<sqrt(tempff)<<" f="<<sqrt(ff)<<endl;
-					cout<<" real t="<<sqrt(tempee-dd*realfactor*realfactor)<<" t="<<tl<<endl;
-					cout<<" temp t="<<sqrt(tempee-dd*factor*factor)<<endl;
-					cout<<" e+f="<<sqrt(ee)+sqrt(ff)<<" d="<<sqrt(dd)<<endl;
-					cout<<" real e+f="<<sqrt(tempee)+sqrt(tempff)<<endl;
-					
-					//cout<<"uc="<<uc<<endl;
-					//cout<<"vc="<<vc<<endl;
-					//cout<<"wc="<<wc<<endl;
-					exit(LOGICERROR);
 				}*/
+
+				dd_sqrt=sin_Omega/dd_sqrt; //not sqrt(d) but for the convenience for next step calc;
+				_XX[_INDEX_chosen]=_XX[_INDEX_chosen-1]+uc+vecDC[0]*cos_Omega+(dc[1]*vecDC[2]-dc[2]*vecDC[1])*dd_sqrt;
+				_YY[_INDEX_chosen]=_YY[_INDEX_chosen-1]+vc+vecDC[1]*cos_Omega+(dc[2]*vecDC[0]-dc[0]*vecDC[2])*dd_sqrt;
+				_ZZ[_INDEX_chosen]=_ZZ[_INDEX_chosen-1]+wc+vecDC[2]*cos_Omega+(dc[0]*vecDC[1]-dc[1]*vecDC[0])*dd_sqrt;
 				
 			} else {// if atom is at the front or at the end of the chain; 
 				THETA=asin(rand_seed(iseed_angle)*2.0-1.0)+_PI_half;
@@ -2919,9 +2866,10 @@ bool cmc::make_change() {
 				tc[2]=_ZZ[_INDEX_chosen-_TYPE_atom_ind]-_ZZ[_INDEX_chosen];
 
 				tl=sqrt(tc[0]*tc[0]+tc[1]*tc[1]+tc[2]*tc[2]);*/
-				if(_BF_flag) {
-					tl=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-_TYPE_atom_ind_real]]
-					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-_TYPE_atom_ind_real]];
+				if(_BF_flag) {// for precision, do not change this.
+					/*tl=_RMIN.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-_TYPE_atom_ind_real]]
+					  +rand_seed(iseed_len1)*_DDELTA.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-_TYPE_atom_ind_real]];*/
+					tl=sqrt(_DIS2_eachatom.pArray[_INDEX_chosen][_INDEX_chosen-_TYPE_atom_ind_real]);
 				} else  {
 					tl=_BOND_length.pArray[_INDEX_RES_ATM[_INDEX_chosen]][_INDEX_RES_ATM[_INDEX_chosen-_TYPE_atom_ind_real]];
 				} 
@@ -3009,7 +2957,7 @@ bool cmc::chck_bond_len() {//after each make mapping!
 	return true;
 }
 ///////////////////////////
-void cmc::make_choice(const int INDEX_coor) {	
+inline void cmc::make_choice(const int INDEX_coor) {	
 	if( (INDEX_coor>_NUM_atoms) || (INDEX_coor<=0) ) {
 		cout<<"Error: INDEX_coor="<<INDEX_coor<<", should be in [1, "<<_NUM_atoms<<"]"<<endl;
 		exit(LOGICERROR);
@@ -3073,7 +3021,7 @@ void cmc::make_choice(const int INDEX_coor) {
 	}
 }
 ///////////////////////////
-void cmc::make_judge() {	
+inline void cmc::make_judge() {	
     calc_energy_chosen_atom();
     int i=0;
     int j=0;
@@ -3183,7 +3131,7 @@ void cmc::make_judge() {
 	//}
 }
 ///////////////////////////
-void cmc::make_accept() {
+inline void cmc::make_accept() {
 	_ENER_total+=_ENER_delta;
 	/*if( (_INDEX_chosen==1) || (_INDEX_chosen==_NUM_atoms) )
 	{
@@ -3252,8 +3200,7 @@ void cmc::make_accept() {
 	_MC_NUM_SUC_stat[_INDEX_TEMPERATURE]+=1.0;/*************  for check program ************/
 }
 ///////////////////////////
-void cmc::make_reject_all()
-{
+inline void cmc::make_reject_all() {
 	int i=0;
 	if(_FLAG_ener) {
 		_ENER_delta_LJ=0.0;
@@ -3306,7 +3253,7 @@ void cmc::make_reject_all()
 	//_MC_NUM_FIL+=1;/*************  for check program ************/
 }
 ///////////////////////////
-void cmc::make_reject_only_move() {
+inline void cmc::make_reject_only_move() {
 	_XX[_INDEX_chosen]=_XX[0];
 	_YY[_INDEX_chosen]=_YY[0];
 	_ZZ[_INDEX_chosen]=_ZZ[0];
@@ -3314,7 +3261,7 @@ void cmc::make_reject_only_move() {
 	//_MC_NUM_FIL+=1;/*************  for check program ************///no need!
 }
 ///////////////////////////
-int cmc::make_mcmove(const int INDEX_coor) {
+inline int cmc::make_mcmove(const int INDEX_coor) {
 	make_choice(_Runninglist[INDEX_coor]);
 	if( make_change() ) {
 		make_judge();//in judge _ENER_total can not be changed, should be in accept! 
@@ -3462,7 +3409,7 @@ inline void cmc::recording() {
 	fclose(fq);
 }
 ////////////////////////////
-void cmc::calc_energy_chosen_atom() {
+inline void cmc::calc_energy_chosen_atom() {
 	int k=0;
 	//int l=0;
 	//int x=0;
@@ -4530,10 +4477,10 @@ void cmc::initialization() {
     init_energy();
     chck_bond_len();//secure!!
     srand(_PROC_ID*(unsigned)time(NULL));
-    tell_procid(); if(_FLAG_pivot<_TEMPERATURE) {
-    	cout<<" run with pivot;"<<endl;
+    tell_procid(); if(_FLAG_pivot<0.0) {
+    	cout<<" run with Pivot move trial;"<<endl;
     } else {
-    	cout<<" run with orthogonal move-trial;"<<endl;
+    	cout<<" run with Orthogonal & Pivot move-trial;"<<endl;
     }
     run_with_stepnumber(_NUM_atoms*1000); //minimization
     init_statistic();
@@ -4676,6 +4623,7 @@ void cmc::run() {
 			cout<<" later you can check: [ accept_ratio.dat ] for rem accepted ratio ~ "<<endl;
 		}
 	}
+	_numerpivot=1e-12;
 	for(_I_eachstep=0, _I_totalnum=0; _I_totalnum < _RUNTIMES_totalnum; _I_eachstep++) {
 		//cout<<_I_eachstep<<endl;
 		if( _I_eachstep == _RUNTIMES_eachstep ) {
@@ -4850,7 +4798,7 @@ void cmc::ensembler() {
 	
 }
 /////////////////////////////////
-void cmc::init_statistic() {
+inline void cmc::init_statistic() {
 	if(!_Enery_initialized) {// no need any more... but put it here, I dont wanna change;
 		cout<<" Energy not initialized, error: init_statistic() "<<endl;
 		exit(LOGICERROR);

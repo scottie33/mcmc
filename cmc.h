@@ -49,8 +49,8 @@ public:
 	bool _Enery_initialized;
 	void   calc_energy_each_atom();      
 	inline void   calc_energy_chosen_atom();          //before & after each atom change; <1+<2
-	void init_statistic();
-	void close_statistic();
+	inline void init_statistic();
+	inline void close_statistic();
 	bool _Statistic_over;
 	void ensembler();
 	void output_statistic();
@@ -511,6 +511,7 @@ private:
 	//////////////
 	bool _FLAG_ener;
 	double _FLAG_pivot;
+	double _numerpivot;
 	//double* _rhead2;     //for each selection...
 	//ofstream* _rh2_stream;
 	//ofstream _ener_stream;
@@ -720,6 +721,7 @@ private:
 	double _MC_NUM_STT; //statistic;
 	//void fout_ratio();
 	//void cout_parameters();
+
 
 };
 

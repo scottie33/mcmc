@@ -25,7 +25,7 @@ void smoothArray(const double *in, double *out, long N, int n) {
 
 int main(int argc, char** argv) {
 	if(argc<6) {
-		cout<<" cli: wham smoothingsteps epsilon bondlen sigma N"<<endl;
+		cout<<" cli: wham smoothingsteps epsilon bondlen sigma N [usedrepN]"<<endl;
 		exit(-1);
 	}
 	int smoothsteps=atoi(argv[1]);
@@ -33,6 +33,10 @@ int main(int argc, char** argv) {
 	double bondlen=atof(argv[3]);
 	double sigma=atof(argv[4]);
 	double NumAtoms=atof(argv[5]);
+	int usedrepN=0;
+	if(argc==7) {
+		usedrepN=atoi(argv[6]);
+	}
 	int ie=0;
 	int rs=0;
 	int nrep=0;
@@ -57,12 +61,23 @@ int main(int argc, char** argv) {
 			readparameter(tempstr, string("_E_totalnum"), nene);
 		}
 	}
-	cout<<" there are "<<nrep<<" replicas, and "<<nene<<" energy bins."<<endl;
+	cout<<" there are originally "<<nrep<<" replicas, and "<<nene<<" energy bins."<<endl;
+	cout<<" and we are gonna use "<<usedrepN<<" replicas of it."<<endl;
 	para_ifstream.close();
+
+	if(argc>=7) {
+		if( usedrepN>nrep || usedrepN<1 ) {
+			cout<<" Error: usedrepN setup wrong, should be [1,"<<nrep<<"] "<<endl;
+			exit(-1);
+		}
+		//nrep=usedrepN;
+	} else {
+		usedrepN=nrep;
+	}
 
 	///////////
 	CMyArray<double> ProbEach;
-	ProbEach.Build(nrep,nene);
+	ProbEach.Build(usedrepN,nene);
 	ProbEach.SetZero();
 	///////////
 	///////////
@@ -93,7 +108,7 @@ int main(int argc, char** argv) {
 			//cout<< tempstr<<endl;
 			EBins[ie]=atof(tempvec[0].c_str());
 			ProAll[ie]=0.0;
-			for(rs=0; rs<nrep; rs++) {
+			for(rs=0; rs<usedrepN; rs++) {
 				ProbEach.pArray[rs][ie]=atof(tempvec[rs+1].c_str());
 				ProAll[ie]+=ProbEach.pArray[rs][ie];
 				//if(ProAll[ie]>1e-6) cout<<ProAll[ie]<<endl;
@@ -108,9 +123,9 @@ int main(int argc, char** argv) {
 	//double TempMin=0.0;
 	int* _INDEX_maxenerdis_eachrep;
 	int* _INDEX_minenerdis_eachrep;
-	_INDEX_maxenerdis_eachrep=new int[nrep];
-	_INDEX_minenerdis_eachrep=new int[nrep];
-	for(rs=0; rs<nrep; rs++) {
+	_INDEX_maxenerdis_eachrep=new int[usedrepN];
+	_INDEX_minenerdis_eachrep=new int[usedrepN];
+	for(rs=0; rs<usedrepN; rs++) {
 		TempMax=0.0;
 		//TempMin=0.0;
 		_INDEX_maxenerdis_eachrep[rs]=0;
@@ -146,7 +161,7 @@ int main(int argc, char** argv) {
 	
 	//////////////// index_max_dis begin /////////////////
 	int _INDEX_maxenerdis=_INDEX_maxenerdis_eachrep[0];
-	for(rs=1; rs<nrep; rs++) {
+	for(rs=1; rs<usedrepN; rs++) {
 		//cout<<rs<<endl;
 		if(_INDEX_maxenerdis_eachrep[rs]>_INDEX_maxenerdis) {
 			_INDEX_maxenerdis=_INDEX_maxenerdis_eachrep[rs];
@@ -156,14 +171,14 @@ int main(int argc, char** argv) {
 	//cout<<"again..."<<endl;
 	//////////////// index_min_dis begin ///////////////////
 	int _INDEX_minenerdis=_INDEX_minenerdis_eachrep[0];
-	for(rs=1; rs<nrep; rs++) {
+	for(rs=1; rs<usedrepN; rs++) {
 		if( _INDEX_minenerdis_eachrep[rs]!=0 ) {
 			_INDEX_minenerdis=_INDEX_minenerdis_eachrep[rs];
 			break;
 		}
 	}
 	//cout<<" calc: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<ProAll[_INDEX_minenerdis]<<endl;
-	for(rs=1; rs<nrep; rs++) {
+	for(rs=1; rs<usedrepN; rs++) {
 		if( _INDEX_minenerdis_eachrep[rs]<_INDEX_minenerdis && _INDEX_minenerdis_eachrep[rs]!=0 ) {
 			_INDEX_minenerdis=_INDEX_minenerdis_eachrep[rs];
 		}
@@ -190,21 +205,21 @@ int main(int argc, char** argv) {
 
 	///////start to calc S(E)///////
 	double* Fm;
-	Fm=new double[nrep];
-	MEMOSETZERO(Fm, sizeof(double)*nrep);	
+	Fm=new double[usedrepN];
+	MEMOSETZERO(Fm, sizeof(double)*usedrepN);	
 
 	double* Temperatures;
-	Temperatures=new double[nrep];
-	MEMOSETZERO(Temperatures, sizeof(double)*nrep);		
+	Temperatures=new double[usedrepN];
+	MEMOSETZERO(Temperatures, sizeof(double)*usedrepN);		
 
 	double* _SE;
 	_SE=new double[nene];
 	MEMOSETZERO(_SE, sizeof(double)*nene);	
 
 	double* _NUM_conf;
-	_NUM_conf=new double[nrep];
-	MEMOSETZERO(_NUM_conf, sizeof(double)*nrep);
-	for(rs=0; rs<nrep; rs++) {
+	_NUM_conf=new double[usedrepN];
+	MEMOSETZERO(_NUM_conf, sizeof(double)*usedrepN);
+	for(rs=0; rs<usedrepN; rs++) {
 		for(ie=0; ie<nene; ie++) {
 			_NUM_conf[rs]+=ProbEach.pArray[rs][ie];
 		}
@@ -237,17 +252,17 @@ int main(int argc, char** argv) {
 		}
 		cout<<" T["<<tempsz+1<<"]="<<Temperatures[tempsz]<<endl;
 		tempsz++;
-		if(tempsz==nrep) {
+		if(tempsz==usedrepN) {
 			break;
 		}
 	}
-	cout<<" load "<<nrep<<" temperatures for replicas."<<endl;
+	cout<<" load "<<usedrepN<<" temperatures for replicas."<<endl;
 	temperatures_ifstream.close();
 	//def: for speeding iteration, use the following double** ;
 	double** T_rep_E_stp;
-	T_rep_E_stp=new double*[nrep];
+	T_rep_E_stp=new double*[usedrepN];
 
-	for(rs=0; rs<nrep; rs++) {
+	for(rs=0; rs<usedrepN; rs++) {
 		T_rep_E_stp[rs]=new double[nene];
 		for(ie=0; ie<nene; ie++) {
 			T_rep_E_stp[rs][ie]=1/Temperatures[rs]*EBins[ie];
@@ -258,7 +273,7 @@ int main(int argc, char** argv) {
 
 	//iteration: start, to calculate the n(E) using the self-consistent iter;
 	while(true) {
-		for(rs=0; rs<nrep; rs++) {
+		for(rs=0; rs<usedrepN; rs++) {
 			Fm[rs]=_MIN_DOUBLE;
 			for(ie=0; ie<nene; ie++) {
 				Fm[rs]=log_cc( Fm[rs], _SE[ie]-T_rep_E_stp[rs][ie] );
@@ -268,7 +283,7 @@ int main(int argc, char** argv) {
 
 		for(ie=0; ie<nene; ie++) {
 			_SE[ie]=_MIN_DOUBLE;   // actually log(_SE[]);
-			for(rs=0; rs<nrep; rs++) {
+			for(rs=0; rs<usedrepN; rs++) {
 				if( _NUM_conf[rs] > 0 ) {
 					_SE[ie]=log_cc( _SE[ie], log(_NUM_conf[rs])-Fm[rs]-T_rep_E_stp[rs][ie] );
 				}
@@ -456,7 +471,7 @@ int main(int argc, char** argv) {
 	delete[] Fm;
 	Fm=NULL;
 
-	for(rs=0; rs<nrep; rs++) {
+	for(rs=0; rs<usedrepN; rs++) {
 		delete[] T_rep_E_stp[rs];
 		T_rep_E_stp[rs]=NULL;
 	}

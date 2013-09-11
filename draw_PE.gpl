@@ -35,7 +35,7 @@ set mytics 2
 #set grid xtics lt 0 lw 1 lc rgb "#0000ff"
 set style fill transparent solid 0.1 noborder
 #set key outs
-set key box
+#set key box
 #plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
 #plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
 

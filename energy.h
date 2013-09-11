@@ -53,6 +53,17 @@ inline double  Energy_BF(const double&  paraK, const double& dMd, const double& 
 		//return _EMAX_DOUBLE*EPSILON;
 		return _MAX_DOUBLE;
 	}
+	/*tempdis6=SIGMA6/dMd/dMd/dMd;
+	tempdis12=tempdis6*tempdis6;
+	tempdis2=sqrt(dMd);
+	tempdis2=tempdis2-bondlen;
+	tempdis2=tempdis2*tempdis2/0.25;
+	if( tempdis2<(1.0-1e-12) ) {
+		return -0.125*paraK*log(1.0-tempdis2)+EPSILON*tempdis12*(tempdis12-2.0);
+	} else {
+		//return _EMAX_DOUBLE*EPSILON;
+		return _MAX_DOUBLE;
+	}*/
 }
 //#define Energy_AG(paraK,aMa2) paraK*aMa2/2.0
 /*inline const double&  Energy_AG(const double&  paraK, const double&  cosaMa2, const double&  sinaMa2, const double&  costhe0, const double&  sinthe0) {

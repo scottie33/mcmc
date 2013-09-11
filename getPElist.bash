@@ -1,18 +1,21 @@
 #!/bin/bash
 
-if [ $# -eq 0 ]; then
-	echo " cmd t1 t2 t3 t4 t5 ... "
+if [ $# -lt 3 ]; then
+	echo " cmd epsilon Natoms t1 [t2 [t3 [t4 [t5]]]] ... "
 	exit -1
 fi
 
 rm PE*.dat
 
 cp drawpelist.gpl drawpelistt.gpl
-
+epsilon=$1
+shift
+Natoms=$1
+shift
 num=1
 for i in $@;do
 	echo "t=$i"
-	python getPE.py $i #> templog
+	python getPE.py $i $epsilon $Natoms #> templog
 	mv PE.dat PE_$num.dat
 	
 	if [ $num -eq 1 ]; then

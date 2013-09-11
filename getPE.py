@@ -9,27 +9,36 @@ def log_cc(log_aa, log_bb): #cc=aa+bb; give log_aa, log_bb, return log_cc;
 	else:
 		return log_bb+log(1+exp(log_aa-log_bb))
 
-if len(sys.argv) < 2: 
-	print " Syntax: getPE.py valTemp [emin] [emax] [idxCE]" # [shift]"
+if len(sys.argv) < 4: 
+	print " Syntax: getPE.py valTemp epsilon Natoms [emin] [emax] [idxCE]" # [shift]"
 	print " in _temperaturelist.pls T[idxCE]=valTemp, this option is for comparing CE v.s. MCE"
   	exit(-1)
 
 valTemp=float(sys.argv[1])
 
+epsilon=float(sys.argv[2])
+
+natoms=float(sys.argv[3])
 
 emin=0
-if len(sys.argv) > 2: 
-	emin=float(sys.argv[2])
+if len(sys.argv) > 4: 
+	emin=float(sys.argv[4])
 
 emax=0
-if len(sys.argv) > 3: 
-	emax=float(sys.argv[3])
+if len(sys.argv) > 5: 
+	emax=float(sys.argv[5])
 
 idxCE=0
-if len(sys.argv) > 4: 
-	idxCE=int(sys.argv[4])
+if len(sys.argv) > 6: 
+	idxCE=int(sys.argv[6])
+print " emin=",emin
+print " emax=",emax
 
+emin=emin*epsilon*natoms
+emax=emax*epsilon*natoms
 
+print " emin=",emin
+print " emax=",emax
 try:
 	fp=open("entropy.dat", 'r')
 	print " loading information of column from: [entropy.dat]"
@@ -107,8 +116,10 @@ coeff=pemax2/pemax1
 
 delmin=1e+308
 delmax=1e+308
-idemin=0.0
-idemax=0.0
+idemin=0
+idemax=0
+
+
 
 for i in range(0,listlen):
 	if abs(emin-ener[i])<delmin:
@@ -122,6 +133,17 @@ for i in range(0,listlen):
 	else:
 		print >> pefp, "%f %f %f %f" % (ener[i], pelist1[i], pelist2[i]/coeff, ener[i]-valTemp*entropy[i])
 
+ymin=ener[idemin]-valTemp*entropy[idemin]
+ymax=ymin
+
+for i in range(0,idemax-idemin):
+	
+	temp=ener[i+idemin]-valTemp*entropy[i+idemin]
+	if ymin>temp:
+		ymin=temp
+	if ymax<temp:
+		ymax=temp
+		
 print " emin=",emin,"i_min=",idemin,"e_i_min=",ener[idemin]
 print " emax=",emax,"i_max=",idemax,"e_i_max=",ener[idemax]
 
@@ -138,13 +160,20 @@ tempstr="echo smin=0.0 >> parape.gpl"
 os.system(tempstr)
 tempstr="echo smax="+str(pemax1)+" >> parape.gpl"
 os.system(tempstr)
+if abs(emin-0)>1e-12 and abs(emax-0)>1e-12:
+	tempstr="echo emin="+str(ener[idemin])+" >> parape.gpl"
+	os.system(tempstr)
+	tempstr="echo emax="+str(ener[idemax])+" >> parape.gpl"
+	os.system(tempstr)
+
 # tempstr="echo ymin="+str(ener[idemin]-valTemp*entropy[idemin])+" >> parape.gpl"
 # os.system(tempstr)
 # tempstr="echo ymax="+str(ener[idemax]-valTemp*entropy[idemax])+" >> parape.gpl"
 # os.system(tempstr)
-tempstr="echo ymin="+str(emin)+" >> parape.gpl"
+tempstr="echo ymin="+str(ymin)+" >> parape.gpl"
 os.system(tempstr)
-tempstr="echo ymax="+str(emax)+" >> parape.gpl"
+#tempstr="echo ymax="+str(ener[idemax]-valTemp*entropy[idemax])+" >> parape.gpl"
+tempstr="echo ymax="+str(ymax)+" >> parape.gpl"
 os.system(tempstr)
 tempstr="echo idxCE="+str(idxCE)+" >> parape.gpl"
 os.system(tempstr)

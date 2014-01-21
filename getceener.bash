@@ -9,13 +9,22 @@ rm tempREC.dat
 touch tempREC.dat
 
 cat $2 | while read line; do
-	#getOE filename colid valTemp
 	python getOE.py $1 2 $line
 	cat OET.dat >> tempREC.dat
 done
 
-echo "coeff=$3" > temp.gpl
+filename=`echo $1 | sed -e "s/\.dat//g"`
+
+mv tempREC.dat ce${filename}.dat
+
+./derivative ce${filename}.dat dece${filename}.dat
+
+echo "fname='ce${filename}.dat'" > temp.gpl
+echo "defname='dece${filename}.dat'" >> temp.gpl
+echo "coeff=$3" >> temp.gpl
 
 gnuplot < draw_ceener.gpl
+
+mv ceener.eps ce${filename}.eps
 
 exit 0

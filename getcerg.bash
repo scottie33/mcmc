@@ -29,7 +29,17 @@ cat $1 | while read line; do
 	cat OET.dat >> tempREC.dat
 done
 
+mv tempREC.dat cerg2.dat
+
+./derivative cerg2.dat decerg2.dat
+
+tempT=`cat decerg2.dat | sort -k2,2n | tail -n 1 | awk '{print $1}'`
+tempC=`cat decerg2.dat | sort -k2,2n | tail -n 1 | awk '{print $2}'`
+
+echo "set arrow 1 from $tempT, second 0.0 to $tempT, second $tempC nohead lt 1 lw 0.1 lc rgb 'gray'" > tempcerg.gpl
+echo "set label '{/Times-Italic T_{/Symbol Q}=$tempT}' at $tempT+0.5, second $tempC-0.5 left" >> tempcerg.gpl
+
 gnuplot < draw_cerg2.gpl
-gnuplot < draw_cerg2_unlog.gpl
 
 exit 0
+

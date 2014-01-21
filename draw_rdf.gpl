@@ -1,0 +1,68 @@
+
+reset
+
+#emin=emin/epsilon
+#emax=emax/epsilon
+set term post enh size 8,4.5 color
+set out 'rdf.eps'
+
+#set term X11 size 640,360 #16:9 nice look
+set multiplot
+#unset key
+#set title 
+mytitle='{/Times-Italic g(r)}'
+set xlabel '{/Times-Italic distance' font ",20"# tc rgb "#0000ff"
+#set encoding default
+
+set ylabel mytitle font ",20"# tc rgb "#880000"
+#set xrange [emin:emax]
+#smax=(smax-smin)*1.1+smin
+#set yrange [-0.05:1.05]
+#load 'temptrange.gpl'
+#trange=tmax-tmin
+#tmax=tmax+trange*0.01
+#tmin=tmin-trange*0.01
+
+load 'indexrange.gpl'
+
+
+set xrange [rmin:rmax]
+#set yrange [bmin:bmax]
+
+
+#load 'accpara.gpl'
+#print 'criterionT=',criterionT
+#print 'steplength=',steplength 
+#print 'scaleto=',scaleto
+
+set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
+#set y2tics tc rgb "#008800"
+
+set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
+#xinterval=(emax-emin)/5
+#set xtics xinterval
+
+set xtics 1
+#set ytics 2
+set mxtics 5
+set mytics 5
+
+set arrow 1 from rmin,1.0 to rmax,1.0 nohead lt 1 lw 2 lc rgb 'gray'
+
+#set grid xtics lt 0 lw 1 lc rgb "#0000ff"
+#set style fill transparent solid 0.1 noborder
+
+#set key left
+#set key box
+#plot for [i=2:nrep:1] "probability_each.dat" u 1:i w filledcurves title "T".i
+#plot "entropy.dat" u 1:2 w l lt 1 lw 6 lc rgb "gray" title "",\
+
+#set logscale x
+#f(x,y)=steplength*pow(scaleto, double(i)/double(_NUM_replicas-1));
+
+plot fname u 1:2 w l lt 1 lw 9.5 lc rgb "gray" title "",\
+	fname u 1:2 w l lt 1 lw 1.5 lc rgb "black" title mytitle
+
+
+unset multiplot
+

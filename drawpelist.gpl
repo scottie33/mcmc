@@ -13,9 +13,11 @@ set multiplot
 #set title 
 #cetitle='{/Times-Italic CE Heat Capacity}'
 #mcetitle='{/Times-Italic MCE Heat Capacity}'
-set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",20"
+set xlabel '{/Times-Italic E/N}' font ",20"
 
-set ylabel '{/Times-Italic P(E/{/Symbol e}/N)}' font ",20"
+set ylabel '{/Times-Italic P(E)}' font ",20"
+
+set xtics 0.5
 
 set yrange [0:]
 

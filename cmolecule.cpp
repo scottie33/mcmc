@@ -590,13 +590,14 @@ void CMolecule::readpdbinfo(const char* fmolname, double ZOOMFACTOR, bool sortin
 	}
 	string TTStr=string(fmolname);
 	int TTSize=TTStr.size();
-	bool xyzinfoflag=false;
+	//bool xyzinfoflag=false;
 	ifstream fmolecule_xyz( (TTStr.substr(0, TTSize-3)+string("xyz")).c_str() );
 	if(fmolecule_xyz==NULL) {
 		fmolecule_xyz.close();
 		cout<<" with no XYZ info"<<endl;
+		exit(-1);
 	} else {
-		xyzinfoflag=true;
+		//xyzinfoflag=true;
 		cout<<" with XYZ info: [ "<<TTStr.substr(0, TTSize-3)+string("xyz")<<" ]"<<endl;
 	}
 	int i=0;

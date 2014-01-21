@@ -9,15 +9,16 @@ _IFVERBOSE            true              //verbose or not;
 
 _FILENAME_conf        pnc.pdb       //if 'f': file name of initial conformation
 #_RESTARTFlag          false
-_RESTARTFlag         true 600 600 600 // boxlx, boxly, boxlz;
+_RESTARTFlag          true 600 600 600 // boxlx, boxly, boxlz;
 
-_FLAG_pivot           1000.0               //use pivot algorithm or just the Cartesian moves; 0.0 for all pivot;
+_MUCAfile             beta.dat //if _MUCAFlag==true, this specifies the inputfile;
+_FLAG_pivot           2.0               //use pivot algorithm or just the Cartesian moves; 0.0 for all pivot;
 _FLAG_rg2             true              //calculate the dis of rg2 or not;
 _FLAG_ener            true              //calculate the dis of ener or not;
 _LINDEMANN_INDEX      false              //stat LINDEMANN INDEX or not;
 _ACCINDEX             0      // 0 no effect; better >1000 the larger the higher precision; < 5000 be careful, it eats memory;
 
-_OPlist 1 1                 
+_OPlist                  
 // group appears as list [head:tail], e.g.: 1 64 65 65 means 
 // group1: 1-64
 // group2: 65
@@ -47,14 +48,14 @@ _DH_flag              false             //with dihedral calculation or not;
 _FFPARA_FN            _ffpara.pls       //read _epsilon info from this file ...
 _NEIGHBOR_lj          1                 //apart from how many atoms we begin calculation of potential;
                                         //for example if _BF_flag == false, you can numerate it 1;
-_NUM_replicas         4
-_E_lowest             -55
-_E_interval           0.0110
-_E_totalnum           10000
+_NUM_replicas         64
+_E_lowest             -400
+_E_interval           0.100
+_E_totalnum           8000
 
-_RG_lowest           0       //it's acutally the x, y, z RG^2 = RG^2 /3 ＝ (RG*$\sigma$)^2 / 3
-_RG_interval         0.05
-_RG_totalnum         1       // actually in the system is _RG_totalnum/NC/NC
+_RG_lowest           2.4       //it's acutally the x, y, z RG^2 = RG^2 /3 ＝ (RG*$\sigma$)^2 / 3
+_RG_interval         0.012
+_RG_totalnum         50       // actually in the system is _RG_totalnum/NC/NC
 
 _FLAG_dis            false
 
@@ -64,9 +65,11 @@ _EINT_lowest  0
 _EINT_interval -1.0
 _EINT_totalnum 1
 
-_RUNTIMES_eachstep    500         //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
+_RUNTIMES_eachstep    5000         //actually _RUNTIMES_eachstep*_NUM_atoms; number of mcs per step on each replica;
 _RUNTIMES_totalnum    10000            //how many steps on each replica; the following para are based on this.
 _RUNTIMES_recording   0                //
 _RUNTIMES_remgap      50               //one rem per remgap*natoms mcs
 _RUNTIMES_output      100             //how many times output > remgap
+_recordinglist 
+//Energy index to be put here, could be a list with blank to separate.
 

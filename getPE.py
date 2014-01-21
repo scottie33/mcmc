@@ -88,8 +88,7 @@ while True:
 		if idxCE>0 and len(elements)>(idxCE):
 			petemp=float(elements[idxCE])
 			pelist2.append(petemp)
-			if petemp>pemax2:
-				pemax2=petemp
+			pemax2=pemax2+petemp
 	else:
 		break
 if len(pelist2)!=0: 
@@ -129,11 +128,14 @@ for i in range(0,listlen):
 		delmax=abs(emax-ener[i])
 		idemax=i
 	if len(pelist2)==0:
-		print >> pefp, "%f %f %d %f" % (ener[i], pelist1[i], 0, ener[i]-valTemp*entropy[i])
+		print >> pefp, "%f %f %d %f" % (ener[i], pelist1[i], 0, ener[i]-valTemp*(entropy[i]))
+		#print >> pefp, "%f %f %d %f" % (ener[i], pelist1[i], 0, ener[i]-valTemp*(entropy[i]-PFZ))
 	else:
-		print >> pefp, "%f %f %f %f" % (ener[i], pelist1[i], pelist2[i]/coeff, ener[i]-valTemp*entropy[i])
+		print >> pefp, "%f %f %f %f" % (ener[i], pelist1[i], pelist2[i]/pemax2, ener[i]-valTemp*(entropy[i]))
+		#print >> pefp, "%f %f %f %f" % (ener[i], pelist1[i], pelist2[i]/pemax2, ener[i]-valTemp*(entropy[i]-PFZ))
 
-ymin=ener[idemin]-valTemp*entropy[idemin]
+ymin=ener[idemin]-valTemp*(entropy[idemin])
+#ymin=ener[idemin]-valTemp*(entropy[idemin]-PFZ)
 ymax=ymin
 
 for i in range(0,idemax-idemin):
@@ -177,6 +179,7 @@ tempstr="echo ymax="+str(ymax)+" >> parape.gpl"
 os.system(tempstr)
 tempstr="echo idxCE="+str(idxCE)+" >> parape.gpl"
 os.system(tempstr)
+os.system("./smoothdata PE.dat smPE.dat 10")
 os.system("gnuplot < draw_PE.gpl")
 tempstr="mv PE.eps PE_"+str(valTemp)+".eps"
 os.system(tempstr)

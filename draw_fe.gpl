@@ -43,8 +43,10 @@ set key left top
 
 set logscale x
 
-plot "HFE.dat" u ($1/epsilon):($3/epsilon) w l lt 1 lw 2 lc rgb "red" title ftitle,\
-"HFE.dat" u ($1/epsilon):4 axis x1y2 w l lt 2 lw 2 lc rgb "blue" title stitle
+plot "tempfe.dat" u ($1/epsilon):($2/epsilon) w l lt 1 lw 2 lc rgb "brown" title ftitle,\
+"HFE.dat" u ($1/epsilon):($3/epsilon) w l lt 1 lw 2 lc rgb "gray" title '{/Times-Italic FE}',\
+"tempCEentropy.dat" u ($1/epsilon):2 axis x1y2 w l lt 2 lw 2 lc rgb "blue" title stitle,\
+"HFE.dat" u ($1/epsilon):4 axis x1y2 w l lt 2 lw 2 lc rgb "gray" title '{/Times-Italic FE\_Entropy}'
 
 #plot "CECV.dat" u ($1/epsilon):($2/epsilon) axis x1y2 w p pt 1 ps 2 lc rgb "black" title Ecetitle,\
 #"MCEE.dat" u ($1/epsilon):($2/epsilon) axis x1y2 w l lt 2 lw 2 lc rgb "black" title Emcetitle,\

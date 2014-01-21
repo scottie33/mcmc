@@ -1,3 +1,5 @@
+source aligncom.tcl
+
 proc bonddistance {seltext f_r_out f_d_out r_min r_max N_d} {
   set sel [atomselect top "$seltext"]
   set natoms [$sel num]
@@ -47,10 +49,36 @@ proc bonddistance {seltext f_r_out f_d_out r_min r_max N_d} {
       }
     }
   }
-
+  set sum 0.0
+  set mean 0.0
+  set deldata 0.0
+  if { $N_d > 1 } { 
+    for {set k 0} {$k < $N_d} {incr k} {
+      set sum [expr $sum+$distribution($k)]
+    }
+  }
   for {set m 0} {$m < $itern} {incr m} {
     set simdata($m.r) [vecscale $simdata($m.r) [expr 1.0/$nf]]
-    puts $outfile "[expr $m+1] $simdata($m.r) $mindata($m.r) $maxdata($m.r)"
+  }
+
+  if { $N_d > 1 } { 
+    for {set m 0} {$m < $itern} {incr m} {
+      set mean [expr $mean+$simdata($m.r)]
+    }
+    set mean [expr $mean/$itern]
+  }
+  puts "mean=$mean"
+  if { $N_d > 1 } { 
+    for {set k 0} {$k < $N_d} {incr k} {
+      set tempr [expr $r_min+$k*$dr-$mean]
+      set tempr [expr $tempr*$tempr]
+      set deldata [expr $deldata+$distribution($k)*$tempr ]
+    }
+    set deldata [expr $deldata/$sum]
+  }
+  puts "delta=[expr sqrt($deldata)]"
+  for {set m 0} {$m < $itern} {incr m} {
+    puts $outfile "[expr $m+1] $simdata($m.r) $mindata($m.r) $maxdata($m.r) $mean $deldata"
   }
   close $outfile
   ##################################################
@@ -58,10 +86,6 @@ proc bonddistance {seltext f_r_out f_d_out r_min r_max N_d} {
 
   if { $N_d > 1 } { 
     set outfile [open $f_d_out w]
-    set sum 0.0
-    for {set k 0} {$k < $N_d} {incr k} {
-      set sum [expr $sum+$distribution($k)]
-    }
     for {set k 0} {$k < $N_d} {incr k} {
       puts $outfile "[expr $r_min + $k * $dr] [expr $distribution($k)/$sum]"
     }

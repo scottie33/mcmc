@@ -97,6 +97,7 @@ rmax=rmax+0.1
 set xrange [rmin:rmax]
 
 #set yrange [dismin:dismax]
+set yrange [dismin:]
 
 
 #load 'accpara.gpl'

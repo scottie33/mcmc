@@ -72,7 +72,7 @@ except IOError:
 	exit(-1)
 
 for i in range(0,NREM):
-	valTemp=Thigh/pow(Thigh/Tlow, float(i)/float(NREM-1))
+	valTemp=Tlow/pow(Tlow/Thigh, float(i)/float(NREM-1))
 	PFZ=-1.7e+308
 	meanEn=-1.7e+308
 	meanEp=-1.7e+308
@@ -89,6 +89,15 @@ for i in range(0,NREM):
 hfp.close()
 print " please check your [HFE.dat]."
 print " format: T E F S"
+
+os.system("cat HFE.dat | awk '{print 1/$1,$2}' | sort -k 1,1n > tempCEener.dat")
+os.system("./integration tempCEener.dat tempint.dat")
+os.system("cat tempint.dat | awk '{if(NR==1) print 1/$1,0.0; else print 1/$1,$2/$1}' > tempfe.dat")
+
+os.system("./derivative tempfe.dat tempdefe.dat")
+os.system("cat tempdefe.dat | awk '{print $1,-$2}' > tempCEentropy.dat")
+
+print " please check your [HFE.dat]."
 
 os.system("echo \"xmin="+str(Tlow)+"\" > range.gpl")
 os.system("echo \"xmax="+str(Thigh)+"\" >> range.gpl")

@@ -1,0 +1,22 @@
+CC=mpicxx #-fopenmp
+#CFLAGS=-c -Wall -O3
+CFLAGS=-c -Wall -O2
+#CFLAGS=-fopenmp -c -Wall -O3
+#CFLAGS=-c -Wall
+#CFLAGS=-c
+LDFLAGS=
+SOURCES=muca.cpp cmc.cpp cmolecule.cpp rwpara.cpp ssbf.cpp 
+#aglcalc.cpp
+OBJECTS=$(SOURCES:.cpp=.o)
+EXECUTABLE=muca
+
+all: $(SOURCES) $(EXECUTABLE)
+	
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+.cpp.o:
+	$(CC) $(CFLAGS) $< -o $@
+
+clean:
+	rm -fr *.o

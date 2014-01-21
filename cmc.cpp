@@ -100,6 +100,10 @@ cmc::cmc() {
 	_len_OP=0;
 	_EINTlist=NULL;
 	_len_EINT=0;
+	_recordinglist=NULL;
+	_recordingtemN=NULL;
+	_recordingmaxN=NULL;
+	_recordinglistlen=0;
 	_FLAG_ener=false;
 	_FLAG_pivot=_MAX_DOUBLE;
 	_numerpivot=1e-12;
@@ -123,7 +127,7 @@ cmc::cmc() {
     _RUNTIMES_totalnum=0;        // 10000
     _RUNTIMES_recording=0;     
 	_RUNTIMES_output=0;          // 40 
-	_B_delta=0.0;
+	_REM_delta=0.0;
 	_INDEX_TEMPERATURE=0;
 
 	_E_lowest=0.0;    //       -20
@@ -139,7 +143,7 @@ cmc::cmc() {
 	_RG_lowest=0.0;    //       -20
 	_RG_interval=0.0;  //        0.04
 	_RG_highest=0.0;
-	_RG_totalnum=0.0;  //        5000
+	_RG_totalnum=0;  //        5000
 
 	_RUNTIMES_remgap=0;
 	//_MPI_OR_NOT=false;
@@ -181,6 +185,21 @@ cmc::cmc() {
 	_MC_NUM_FIL_all=NULL;
 	_Statistic_over=true;
 	//_MC_NUM_STT=0;
+
+	_PARA_beta=NULL;
+	_PARA_alpha=NULL;
+	_SE=NULL;
+
+	_INDEX_minenerdis=0;
+	_INDEX_maxenerdis=0;
+
+
+	tempindex_last_beta_alpha=0;
+	tempindex_first_beta_alpha=0;
+	_B_new=0.0;
+	_B_old=0.0;
+	_B_delta=0.0;
+	tempindex_judge_bak=0;
 }
 ///////////////////////////
 cmc::~cmc() {
@@ -412,6 +431,18 @@ void cmc::memo_allocation() {
 	_Memory_freed=false;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
+//////////
+void cmc::memo_allocation_muca() {	
+	_PARA_beta=new double[_E_totalnum];
+	_PARA_alpha=new double[_E_totalnum];
+	if(_PROC_ID==0) {
+		_SE=new double[_E_totalnum];
+	}
+    ///////////////   code start  //////////////////
+    tell_procid(); cout<<" memo_allocation muca done."<<endl;
+	_Memory_freed=false;
+	MPI_Barrier(MPI_COMM_WORLD);
+}
 ////////////////////////////
 void cmc::memo_setzero() {
 	
@@ -618,6 +649,17 @@ void cmc::memo_setzero() {
     tell_procid(); cout<<" memo_setzero done."<<endl;
     MPI_Barrier(MPI_COMM_WORLD);
 }
+//////
+void cmc::memo_setzero_muca() {
+	MEMOSETZERO(_PARA_beta, sizeof(double)*_E_totalnum);
+	MEMOSETZERO(_PARA_alpha, sizeof(double)*_E_totalnum);
+	if(_PROC_ID==0) {
+			MEMOSETZERO(_SE, sizeof(double)*_E_totalnum);
+	}
+    ///////////////   code start  //////////////////
+    tell_procid(); cout<<" memo_setzero muca done."<<endl;
+    MPI_Barrier(MPI_COMM_WORLD);
+}
 ///////////////////////////
 void cmc::memo_evaluation_fnode() {
 	if( _PROC_ID!=0 ) {
@@ -758,6 +800,7 @@ void cmc::memo_evaluation_fnode() {
 		numerator++;		
 	}*/
 	//_sigma_surf_1_6=pow(0.4, 1.0/6.0)*_sigma_surf; //new_edition for 9, 3 LJ of semi-finite substrate;
+
 	tell_procid(); cout<<" memo_evaluation_fnode done."<<endl;
 }
 ///////////////////////////
@@ -827,15 +870,39 @@ inline void cmc::loadrestart(double ogboxlx, double ogboxly, double ogboxlz) {
 	}
 }
 ///////////////////////////
-void cmc::memo_evaluation() {
-	init_epsilonsigma(); //can not change the order; done
+void cmc::memo_evaluation_muca(){
+	memo_evaluation_fnode();
+	MPI_Barrier(MPI_COMM_WORLD);
+	if( !_RESTARTFlag ) {
+		cout<<" restart flag in muca must be equal to [ true ] "<<endl;
+		exit(LOGICERROR);
+	}
+	load_betaalpha();
+	MPI_Barrier(MPI_COMM_WORLD);
+	memo_evaluation_bcast();
+	//the following code is for muca specially.
+	MPI_Bcast(_PARA_beta, _E_totalnum, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_PARA_alpha, _E_totalnum, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_INDEX_minenerdis, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_INDEX_maxenerdis, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&tempindex_first_beta_alpha, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&tempindex_last_beta_alpha, 1, MPI_INT, 0, MPI_COMM_WORLD);
+}
+void cmc::memo_evaluation_rem(){
+	memo_evaluation_fnode();
+	MPI_Barrier(MPI_COMM_WORLD);
+	memo_evaluation_bcast();
+}
+void cmc::memo_evaluation1() { // can not change the order; done;
+	init_epsilonsigma(); //can not change the order; done;
 	broadcast_epsilonsigma();
+	MPI_Barrier(MPI_COMM_WORLD);
 	load_temperatures();
 	scatter_temperatures();
-	memo_evaluation_fnode();
-	memo_evaluation_bcast();
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+void cmc::memo_evaluation2() {
 	loadrestart(_ogboxlx, _ogboxly, _ogboxlz);
-
 	int i=0;
 	int j=0;
 	int num=0;
@@ -970,6 +1037,15 @@ inline void cmc::check_memo() {
 	cout<<" check the molecule information done! "<<endl<<endl;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
+/////
+void cmc::memo_free_muca() { // this has to be done explicitly.
+	//MPI_Barrier(MPI_COMM_WORLD);
+	delete[] _PARA_beta;
+	delete[] _PARA_alpha;
+	if(_PROC_ID==0) {
+		delete[] _SE;
+	}
+}
 ///////////////////////////
 void cmc::memo_free() {	
 	tell_procid(); cout<<" memory deallocation ... "<<endl;
@@ -1051,6 +1127,11 @@ void cmc::memo_free() {
 			_EINT_stat.Release();
 			_EINT_stat_tot.Release();
 		}
+	}
+	if(_recordinglistlen>0) {
+		delete[] _recordinglist;
+		delete[] _recordingtemN;
+		delete[] _recordingmaxN;
 	}
 	delete[] _COM_x;
 	delete[] _COM_y;
@@ -1315,6 +1396,22 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 				}
 				cout<<endl;
 			}
+			if( tempvec[0] == string("_recordinglist") ) {
+				cout<<" _recordinglist: ";
+				_recordinglistlen=tempvec.size()-1;
+				if(_recordinglistlen!=0) {
+					_recordinglist=new int[_recordinglistlen];
+					_recordingmaxN=new int[_recordinglistlen];
+					_recordingtemN=new int[_recordinglistlen];
+				}
+				for(int i=0; i<_recordinglistlen; i++) {
+					_recordinglist[i]=atoi(tempvec[i+1].c_str());
+					_recordingmaxN[i]=20000;
+					_recordingtemN[i]=0;
+					cout<<_recordinglist[i]<<" ";
+				}
+				cout<<endl;
+			}
 			if( tempvec[0] == string("_EINTlist") ) {
 				cout<<" _EINTlist: ";
 				_len_EINT=tempvec.size()-1;
@@ -1354,6 +1451,8 @@ void cmc::load_parameters(const string FILENAME_para) { //only for fnode
 				}
 				cout<<" _RESTARTboxlen: "<<_ogboxlx<<" "<<_ogboxly<<" "<<_ogboxlz<<endl;
 			}
+			readparameter(tempstr, string("_MUCAfile"), _MUCAfile); //if _MUCAFlag==true, this specifies the inputfile;
+			//readparameter(tempstr, string("_MUCAIter"), _MUCAIter); //if _MUCAFlag==true, this specifies the inputfile;
 		}
 		
 		cout<<" now the string is: "<<tempstr<<endl;
@@ -1554,15 +1653,20 @@ void cmc::write_parameters(const string FILENAME_para) {
 			}
 		}
 	}
+	if(_recordinglistlen>0) {
+		para_ofstream<<" _recordinglist ";
+		i=0;
+		for(i=0; i<_recordinglistlen; i++) {
+			para_ofstream<<_recordinglist[i]<<" ";
+		}
+		para_ofstream<<endl;
+	}
 	//writeparameter(para_ofstream, string("_NUM_replica"), _NUM_replica);
 	_RUNTIMES_eachstep*=_NUM_atoms;
 	if(_IFVERBOSE) {
 		cout<<setw(30)<<" ::_RUNTIMES_eachstep: "<<_RUNTIMES_eachstep<<endl;
 	}
-	_RUNTIMES_recording*=_NUM_atoms;
-	if(_IFVERBOSE) {
-		cout<<setw(30)<<" ::_RUNTIMES_recording: "<<_RUNTIMES_recording<<endl;
-	}
+	
 	writeparameter(para_ofstream, string("_NUM_replicas"), _NUM_replicas);
 	writeparameter(para_ofstream, string("_RUNTIMES_eachstep"), _RUNTIMES_eachstep);
 	if(system("rm -fr pdbfiles")) {};
@@ -1609,6 +1713,9 @@ void cmc::write_parameters(const string FILENAME_para) {
 	tell_procid(); cout<<" _dis_interval="<<_DISSTAT_interval<<endl;
 	writeparameter(para_ofstream, string("_RG_totalnum"), _RG_totalnum);
 
+	writeparameter(para_ofstream, string("_MUCAfile"), _MUCAfile);
+	//writeparameter(para_ofstream, string("_FILENAME_conf"), _MUCAIter);
+
 	cout<<resetiosflags(ios::left);
 	para_ofstream.close();
 	cout<<" check [ "<<OFName<<" ] to c if paras loaded right or not."<<endl;
@@ -1651,12 +1758,13 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_FLAG_dis, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_OP, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_len_EINT, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&_recordinglistlen, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-	if( !_BF_flag && (_FLAG_pivot>0.0) ) {
+	if( !_BF_flag && (_FLAG_pivot>1.0) ) {
 		cout<<" error: "<<endl;
 		cout<<" _BF_flag="<<_BF_flag<<endl;
 		cout<<" _FLAG_pivot="<<_FLAG_pivot<<endl;
-		cout<<" _FLAG_pivot got to be negative: <0.0 "<<endl;
+		cout<<" _FLAG_pivot got to be: <1.0 "<<endl;
 		exit(LOGICERROR);
 	}
 
@@ -1667,14 +1775,29 @@ void cmc::broadcast_parameters() {
 		if(_len_EINT!=0) {
 			_EINTlist=new int[_len_EINT];
 		}
+		if(_recordinglistlen!=0) {
+			_recordinglist=new int[_recordinglistlen];
+			_recordingtemN=new int[_recordinglistlen];
+			_recordingmaxN=new int[_recordinglistlen];
+		}
 	}
-	
-	MPI_Bcast(_OPlist, _len_OP, MPI_INT, 0, MPI_COMM_WORLD);
-	_len_OP=_len_OP/2;
+
+	if(_len_OP!=0) {		
+		MPI_Bcast(_OPlist, _len_OP, MPI_INT, 0, MPI_COMM_WORLD);
+		_len_OP=_len_OP/2;
+	}
+
 	if(_len_EINT>0) {
 		MPI_Bcast(_EINTlist, _len_EINT, MPI_INT, 0, MPI_COMM_WORLD);
 		_len_EINT=_len_EINT/2;
 	}
+
+	if(_recordinglistlen>0) {
+		MPI_Bcast(_recordinglist, _recordinglistlen, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(_recordingtemN, _recordinglistlen, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(_recordingmaxN, _recordinglistlen, MPI_INT, 0, MPI_COMM_WORLD);
+	}
+
 	int i=0; 
 	int j=0;
 	bool tempflag=false;
@@ -1733,6 +1856,9 @@ void cmc::broadcast_parameters() {
 	MPI_Bcast(&_DISSTAT_lowest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_DISSTAT_interval, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&_DISSTAT_highest, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+	//MPI_Bcast(&_MUCAIter, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
 	if(_PROC_ID==0) {
 		cout<<" done!"<<endl;
 	}
@@ -2506,11 +2632,13 @@ void cmc::init_epsilonsigma() {//temporary arbitrary!
 			para4gnuplot<<"fn=\'"<<i_name<<"\'\n"
 			            <<"epsilon="<<showpoint<<setprecision(22)<<_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y]<<"\n"
 			            <<"sigma="<<showpoint<<setprecision(22)<<_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]<<"\n"
-			            <<"cut="<<showpoint<<setprecision(22)<<sqrt(_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y])<<endl;
+			            <<"cut="<<showpoint<<setprecision(22)<<sqrt(_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y])<<"\n"
+			            <<"pcut="<<showpoint<<setprecision(22)<<_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]<<endl;
 			pararecord<<"fn=\'"<<i_name<<"\'\n"
 			          <<"epsilon="<<showpoint<<setprecision(22)<<_EPSILON_eachres.pArray[ep_sig_x][ep_sig_y]<<"\n"
 			          <<"sigma="<<showpoint<<setprecision(22)<<_SIGMA_eachres.pArray[ep_sig_x][ep_sig_y]<<"\n"
-			          <<"cut="<<showpoint<<setprecision(22)<<sqrt(_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y])<<"\n"<<"\n";
+			          <<"cut="<<showpoint<<setprecision(22)<<sqrt(_R_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y])<<"\n"
+			          <<"pcut="<<showpoint<<setprecision(22)<<_E_cut_RR_eachres.pArray[ep_sig_x][ep_sig_y]<<"\n"<<"\n";
 			para4gnuplot.close();
 			i_name=i_name+string(".nrg");
 			ofstream outener( i_name.c_str() );
@@ -3020,6 +3148,12 @@ inline void cmc::make_choice(const int INDEX_coor) {
 		_ENER_DH_chosenatom_backup_4=_ENER_DH_eachatom[_INDEX_chosen+2];
 	}
 }
+////////////////////////////
+inline void cmc::make_choice_muca() {
+	//add code here;
+	tempindex_judge_bak=tempindex_judge;
+	_B_old=_B_new;
+}
 ///////////////////////////
 inline void cmc::make_judge() {	
     calc_energy_chosen_atom();
@@ -3119,8 +3253,11 @@ inline void cmc::make_judge() {
 	_ENER_delta=temp+_ENER_delta_BF_l+_ENER_delta_BF_r
 	                +_ENER_delta_AG_l+_ENER_delta_AG_c+_ENER_delta_AG_r
 	                +_ENER_delta_DH_1+_ENER_delta_DH_2+_ENER_delta_DH_3+_ENER_delta_DH_4;
-	if(_ENER_delta<=0.0) {
-		tempnumer_ret=2;//succ!
+}
+inline void cmc::make_judge2() { // rem; not muca;
+	//add code here;
+	if( _ENER_delta<=0.0 ) {
+		tempnumer_ret=2; //succ!
 	} else {
 		if( exp(-_ENER_delta*_TEMPERATURE_REP) > rand_seed(iseed_rand) ) {
 			tempnumer_ret=2;// succ;
@@ -3128,11 +3265,47 @@ inline void cmc::make_judge() {
 			tempnumer_ret=1;// fail;
 		}
 	}
-	//}
+}
+inline void cmc::make_judge2_muca() { //muca; not rem;
+	//add code here;
+	_ENER_total+=_ENER_delta; // this is carefully considered,
+									  // cos' big number attempt will affect _ENER_total much,
+									  // and then when you change _ENER_total back,
+									  // the precision can be not conserved!
+	if( _ENER_total > _E_lowest && _ENER_total < _E_highest ) {
+		tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
+		_B_new=_ENER_total*_PARA_beta[tempindex_judge]+_PARA_alpha[tempindex_judge];
+		_B_delta=_B_new-_B_old;
+		//tempnumer_ret=0;//no count! but need reject_all! 
+						//basically not happened cos' energy limit is chosen by myself!
+	} else if( _ENER_total >= _E_highest ) {
+		//if( tempindex_judge < _E_totalnum )//can not use this? cos' tempindex_judge maybe out of limit!
+		                                     //type [int] is too short!!
+		tempindex_judge=_E_totalnum-1;
+		_B_new=_ENER_total*_PARA_beta[_E_totalnum-1]+_PARA_alpha[_E_totalnum-1];
+		_B_delta=_B_new-_B_old;
+	} else {
+		tempindex_judge=0;
+		_B_new=_ENER_total*_PARA_beta[0]+_PARA_alpha[0];
+		_B_delta=_B_new-_B_old;
+	}
+	if( _B_delta > 0.0 ) {
+		if( exp(_B_delta)>rand_seed(iseed_rand) ) { //rand<p
+			tempnumer_ret=2;// succ;
+		} else {
+			tempnumer_ret=1;// fail;
+		}
+	} else {
+		tempnumer_ret=2;// succ;
+	}
 }
 ///////////////////////////
+/*inline void cmc::make_accept_muca() {
+	//add code here;
+	//_B_old=_B_new; // not necessary;
+}*/
 inline void cmc::make_accept() {
-	_ENER_total+=_ENER_delta;
+	//tempindex_judge_bak=tempindex_judge;
 	/*if( (_INDEX_chosen==1) || (_INDEX_chosen==_NUM_atoms) )
 	{
 		_ENER_ele_old=_ENER_ele_new;
@@ -3197,9 +3370,11 @@ inline void cmc::make_accept() {
 	}
 	//make_mapping_individual();//if just _XX when calc_ener, useless!
 	//_MC_NUM_SUC+=1;/*************  for check program ************/
-	_MC_NUM_SUC_stat[_INDEX_TEMPERATURE]+=1.0;/*************  for check program ************/
+	_MC_NUM_SUC_stat[_INDEX_TEMPERATURE]+=1.0;/*************  for checking program ************/
 }
 ///////////////////////////
+//inline void cmc::make_reject_all_muca() {
+//}
 inline void cmc::make_reject_all() {
 	int i=0;
 	if(_FLAG_ener) {
@@ -3264,14 +3439,25 @@ inline void cmc::make_reject_only_move() {
 inline int cmc::make_mcmove(const int INDEX_coor) {
 	make_choice(_Runninglist[INDEX_coor]);
 	if( make_change() ) {
-		make_judge();//in judge _ENER_total can not be changed, should be in accept! 
+		make_judge();//in judge _ENER_total can not be changed, should be in accept!
+		make_judge2();
 		if(tempnumer_ret==2) {//succ==2
 			//cout<<" succ!! "<<_INDEX_chosen<<endl;
+			_ENER_total+=_ENER_delta;
+			if( _ENER_total>_E_lowest && _ENER_total<_E_highest ) {
+				tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
+			} else if( _ENER_total >= _E_highest ) {
+				tempindex_judge=_E_totalnum-1;
+			} else {
+				tempindex_judge=0;
+			}
 			make_accept();
-		/*cout<<" "<<_INDEX_chosen-1<<": "<<_ENER_AG_eachatom[_INDEX_chosen-1]
-		    <<" "<<_INDEX_chosen<<": "<<_ENER_AG_eachatom[_INDEX_chosen]
-		    <<" "<<_INDEX_chosen+1<<": "<<_ENER_AG_eachatom[_INDEX_chosen+1]<<endl;*/
+			/*cout<<" "<<_INDEX_chosen-1<<": "<<_ENER_AG_eachatom[_INDEX_chosen-1]
+			      <<" "<<_INDEX_chosen<<": "<<_ENER_AG_eachatom[_INDEX_chosen]
+			      <<" "<<_INDEX_chosen+1<<": "<<_ENER_AG_eachatom[_INDEX_chosen+1]<<endl;*/
 		} else if(tempnumer_ret==1) {//fail==1
+			make_reject_all();
+		} else if(tempnumer_ret==0) {//false==0!
 			make_reject_all();
 		} else if(tempnumer_ret==-1) {//false==-1, cos' no new energy calc!
 			make_reject_only_move();
@@ -3282,9 +3468,43 @@ inline int cmc::make_mcmove(const int INDEX_coor) {
 		//do make sure that there is no change in coordinates,
 		//or you must add make_reject_only_move here!
 		return -1; //not count, cuz this is the calculation problem, 
+		           //actually there is a solution but we did not find it;
+	}	
+}
+///////////////////////////
+
+inline int cmc::make_mcmove_muca(const int INDEX_coor) {
+	make_choice(_Runninglist[INDEX_coor]);
+	make_choice_muca();
+	if( make_change() ) {
+		make_judge();//in judge _ENER_total can not be changed, should be in accept! 
+		make_judge2_muca();
+		if(tempnumer_ret==2) {//succ==2
+			//cout<<" succ!! "<<_INDEX_chosen<<endl;
+			make_accept();
+			//make_accept_muca();
+		/*cout<<" "<<_INDEX_chosen-1<<": "<<_ENER_AG_eachatom[_INDEX_chosen-1]
+		    <<" "<<_INDEX_chosen<<": "<<_ENER_AG_eachatom[_INDEX_chosen]
+		    <<" "<<_INDEX_chosen+1<<": "<<_ENER_AG_eachatom[_INDEX_chosen+1]<<endl;*/
+		} else if(tempnumer_ret==1) {//fail==1
+			_B_new=_B_old;
+			tempindex_judge=tempindex_judge_bak;
+			_ENER_total-=_ENER_delta;
+			make_reject_all();
+		} /*else if(tempnumer_ret==0) {//false==0!
+			_ENER_total-=_ENER_delta;
+			make_reject_all(); 
+		}*/ else if(tempnumer_ret==-1) {//false==-1, cos' no new energy calc!
+			make_reject_only_move();
+		}
+		//cout<<" _ENER_total="<<_ENER_total<<endl;
+		return tempnumer_ret;
+	} else {
+		//do make sure that there is no change in coordinates,
+		//or you must add make_reject_only_move here!
+		return -1; //not count, cuz this is the calculation problem, 
 		           //actually there is a solution but we did not find it; 
 	}
-	
 }
 ///////////////////////////
 void cmc::make_mapping_wrap() {
@@ -3382,31 +3602,42 @@ inline void cmc::trajectory_rec() {
 ////////////////////////////
 inline void cmc::recording() {
 	////// add your code here /////
-	sprintf(_RecordingNAME, "pdbfiles/T%03dE%07d.xyz", _INDEX_TEMPERATURE, tempindex_judge);
-	FILE* fq;
-	fq = fopen(_RecordingNAME,"ab");
-	if(fq==NULL) {
-		cout<<" can not open file: "<<_RecordingNAME<<endl;
-		exit(IOERROR);
+	for(index_record=0;index_record<_recordinglistlen;index_record++) {
+		if(tempindex_judge==_recordinglist[index_record]) {
+			break;
+		}
 	}
-	fwrite(&_XX[1],sizeof(double),_SIZE_memo,fq);
-	fwrite(&_YY[1],sizeof(double),_SIZE_memo,fq);
-	fwrite(&_ZZ[1],sizeof(double),_SIZE_memo,fq);
-	/*for(int i=1; i<_SIZE_memo; i++) {
-		fprintf(fq, "ATOM  %5d                   %8.3f%8.3f%8.3f\n", i, _XX[i], _YY[i], _ZZ[i]);
-	}*/
-	/*targetstream<<setw(6)<<setiosflags(ios::left)<<type.c_str()<<resetiosflags(ios::left)
-		<<setw(5)<<atomindex<<" "
-		<<setw(2)<<atomname_chemical.c_str()
-		<<setw(2)<<setiosflags(ios::left)<<atomname_special.c_str()<<resetiosflags(ios::left)<<" "
-		<<setw(3)<<residuename.c_str()<<" "
-		<<chainname.c_str()
-		<<setw(4)<<residueiname<<setw(4)<<" "
-		<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<x_coordinate-double(int(x_coordinate)/1000)*1000.0
-		<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<y_coordinate-double(int(y_coordinate)/1000)*1000.0
-		<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<z_coordinate-double(int(z_coordinate)/1000)*1000.0
-		<<setw(26)<<" "<<endl;*/
-	fclose(fq);
+	if( index_record==_recordinglistlen ) {
+		return;
+	}
+	if(_recordingtemN[index_record]<_recordingmaxN[index_record]) {
+		sprintf(_RecordingNAME, "pdbfiles/E%03d%05d%07d.pdb", _PROC_ID, _recordingtemN[index_record], tempindex_judge);
+		FILE* fq;
+		fq = fopen(_RecordingNAME,"w");
+		if(fq==NULL) {
+			cout<<" can not open file: "<<_RecordingNAME<<endl;
+			exit(IOERROR);
+		}
+		/*fwrite(&_XX[1],sizeof(double),_SIZE_memo,fq);
+		fwrite(&_YY[1],sizeof(double),_SIZE_memo,fq);
+		fwrite(&_ZZ[1],sizeof(double),_SIZE_memo,fq);*/
+		for(int i=1; i<_SIZE_memo; i++) {
+			fprintf(fq, "ATOM  %5d                   %8.3f%8.3f%8.3f\n", i, _XX[i], _YY[i], _ZZ[i]);
+		}
+		/*targetstream<<setw(6)<<setiosflags(ios::left)<<type.c_str()<<resetiosflags(ios::left)
+			<<setw(5)<<atomindex<<" "
+			<<setw(2)<<atomname_chemical.c_str()
+			<<setw(2)<<setiosflags(ios::left)<<atomname_special.c_str()<<resetiosflags(ios::left)<<" "
+			<<setw(3)<<residuename.c_str()<<" "
+			<<chainname.c_str()
+			<<setw(4)<<residueiname<<setw(4)<<" "
+			<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<x_coordinate-double(int(x_coordinate)/1000)*1000.0
+			<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<y_coordinate-double(int(y_coordinate)/1000)*1000.0
+			<<setw(8)<<setiosflags(ios::fixed)<<setprecision(3)<<z_coordinate-double(int(z_coordinate)/1000)*1000.0
+			<<setw(26)<<" "<<endl;*/
+		fclose(fq);
+		_recordingtemN[index_record]+=1;
+	}
 }
 ////////////////////////////
 inline void cmc::calc_energy_chosen_atom() {
@@ -4466,27 +4697,93 @@ void cmc::term_mpi() {
 	MPI_Finalize();
 }
 //////
+void cmc::preparation() {
+	if( _ENER_total > _E_lowest && _ENER_total < _E_highest ) { //normally impossible
+		tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
+		tempindex_judge_bak=tempindex_judge;
+	} else if( _ENER_total >= _E_highest ) { //important;
+		tempindex_judge=_E_totalnum-1;
+		tempindex_judge_bak=tempindex_judge;
+	} else { //important;
+		tempindex_judge=0;
+		tempindex_judge_bak=tempindex_judge;
+	}
+	//initialization end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+void cmc::mucapreparation() {
+	if( _ENER_total > _E_lowest && _ENER_total < _E_highest ) { //normally impossible
+		tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
+		tempindex_judge_bak=tempindex_judge;
+		_B_new=_ENER_total*_PARA_beta[tempindex_judge]+_PARA_alpha[tempindex_judge];//important!!!
+		_B_old=_B_new;
+	} else if( _ENER_total >= _E_highest ) { //important;
+		tempindex_judge=_E_totalnum-1;
+		tempindex_judge_bak=tempindex_judge;
+		_B_new=_ENER_total*_PARA_beta[_E_totalnum-1]+_PARA_alpha[_E_totalnum-1];//important!!!
+		_B_old=_B_new;
+	} else { //important;
+		tempindex_judge=0;
+		tempindex_judge_bak=tempindex_judge;
+		_B_new=_ENER_total*_PARA_beta[0]+_PARA_alpha[0];//important!!!
+		_B_old=_B_new;
+	}
+	//initialization end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+//////
 void cmc::initialization() {
+	load_parameters( "_config.in" );//single process.
+	load_conformation(); //done, only _system_ of p1 initialized.
+	write_parameters( "_config.in" ); //done, as above.
+	broadcast_parameters(); //done.
+	memo_allocation(); //done.
+	memo_setzero(); //done.
+	memo_evaluation1();
+	memo_evaluation_rem();
+	memo_evaluation2();
+    init_energy();
+    chck_bond_len();//security!!
+	rand_init(_PROC_ID);
+	//srand(_PROC_ID*(unsigned)time(NULL));
+	srand(_PROC_ID);
+    tell_procid();
+    if(_FLAG_pivot<0.0) {
+    	cout<<" run with Pivot move trial;"<<endl;
+    } else {
+    	cout<<" run with Orthogonal & Pivot move-trial;"<<endl;
+    }
+	preparation();
+	run_with_stepnumber(_NUM_atoms*1000); // important;
+    init_statistic();
+}
+//////
+void cmc::initialization_muca() {
 	load_parameters( "_config.in" );//single process.
 	load_conformation(); //done, only _system_ of p1 initialized.
 	write_parameters( "_config.in" ); //done, as above
 	broadcast_parameters(); //done.
 	memo_allocation(); //done.
+	memo_allocation_muca(); 
 	memo_setzero(); //done.
-	memo_evaluation();
+	memo_setzero_muca();
+	memo_evaluation1();
+	memo_evaluation_muca();
+	memo_evaluation2();
     init_energy();
-    chck_bond_len();//secure!!
-    srand(_PROC_ID*(unsigned)time(NULL));
-    tell_procid(); if(_FLAG_pivot<0.0) {
+    chck_bond_len();//security!!
+	rand_init(_PROC_ID);
+	//srand(_PROC_ID*(unsigned)time(NULL));
+	srand(_PROC_ID);
+    tell_procid(); 
+    if(_FLAG_pivot<0.0) {
     	cout<<" run with Pivot move trial;"<<endl;
     } else {
     	cout<<" run with Orthogonal & Pivot move-trial;"<<endl;
     }
-    run_with_stepnumber(_NUM_atoms*1000); //minimization
+	mucapreparation();
+	run_with_stepnumber_muca(_NUM_atoms*1000); // important;
     init_statistic();
 }
 ////////////////////////////////////
-///////////////////////////////////
 /*void cmc::cout_parameters() {
 	cout<<setiosflags(ios::left)<<endl;
 	//cout<<setw(30)<<" ::_system_.natoms: "<<_system_.natoms<<endl;
@@ -4514,12 +4811,23 @@ void cmc::check_energy() {
 }
 ////////////////////////////////////
 void cmc::run_with_stepnumber(const int stepnumber) {
-
 	tell_procid(); cout<<endl<<" starting minimization run..... "<<endl<<endl;
-
+	_numerpivot=1e-12;
 	for(int i=0; i<stepnumber; i++) {
 		//cout<<i<<endl;
 		make_mcmove( int(rand_seed(iseed_index)*_realSize) );
+		//check_energy();
+	}
+	tell_procid(); cout<<endl<<" minimization ended......"<<endl<<endl;
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+////////////////////////////////////
+void cmc::run_with_stepnumber_muca(const int stepnumber) {
+	tell_procid(); cout<<endl<<" starting minimization run..... "<<endl<<endl;
+	_numerpivot=1e-12;
+	for(int i=0; i<stepnumber; i++) {
+		//cout<<i<<endl;
+		make_mcmove_muca( int(rand_seed(iseed_index)*_realSize) );
 		//check_energy();
 	}
 	tell_procid(); cout<<endl<<" minimization ended......"<<endl<<endl;
@@ -4535,21 +4843,21 @@ void cmc::run_rem() {
 		//double TTemp=0.0;
 		int index_i=0;
 		int index_j=0;
-		for(i=_NUM_replicas-1; i>0; i--) {		//pair(i, i-1)
+		for(i=_NUM_replicas-1; i>0; i--) { //pair(i, i-1)
 			index_i=_Index_T_rep[i]; // t[i] in which rep
-			index_j=_Index_T_rep[i-1];
-			_B_delta=(_T_rep_eachrep[i]-_T_rep_eachrep[i-1])*(_E_rep[index_j]-_E_rep[index_i]);
+			index_j=_Index_T_rep[i-1]; //
+			_REM_delta=(_T_rep_eachrep[i]-_T_rep_eachrep[i-1])*(_E_rep[index_j]-_E_rep[index_i]);
 			//+1.5_realSize*(_E_rep[index_j]-_E_rep[index_i])
-			//cout<<"_B_delta="<<_B_delta<<endl;
+			//cout<<"_REM_delta="<<_REM_delta<<endl;
 			_NUM_rem[i-1]+=1;
-			if( _B_delta>0.0 ) {	
-				if(rand_seed(iseed_rand)>=exp(-_B_delta)) {	   //rejected
-					continue;		//do nothing
+			if( _REM_delta>0.0 ) {	
+				if(rand_seed(iseed_rand)>=exp(-_REM_delta)) { //rejected
+					continue; //do nothing
 				}
 			}
 			//exchange these two conformation pair(i, i-1)
 		
-			/*TTemp=_T_rep_eachrep[index_i]; 
+			/*TTemp=_T_rep_eachrep[index_i];
 			_T_rep_eachrep[index_i]=_T_rep_eachrep[index_j];	
 			_T_rep_eachrep[index_j]=TTemp;*/
 
@@ -4572,21 +4880,90 @@ void cmc::run_rem() {
 	//////////////////
 	//prep_afterREM();//not important any more if temperature have been exchanged;
     //////////////////
-	//ener_dispatch_r1();
 	//_MC_NUM_SUC+=1;/*************  for check program ************/
 	//_MC_NUM_TOT+=1;/*************  for check program ************/
 }
 /////////////////
 inline bool cmc::ener_dispatch() {
-	if( (_ENER_total < _E_lowest) || ( _ENER_total >= _E_highest ) ) {
+	if( ( _ENER_total>_E_lowest ) && ( _ENER_total < _E_highest ) ) {
+		_Probability.pArray[_INDEX_TEMPERATURE][tempindex_judge]+=1.0;
+		return true;
+	} else {
 		return false;
-	}
-	tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
-	_Probability.pArray[_INDEX_TEMPERATURE][tempindex_judge]+=1;
-	return true;
-	//_NUM_conf_eachtemp[_INDEX_TEMPERATURE]+=1;	
+	}//_NUM_conf_eachtemp[_INDEX_TEMPERATURE]+=1;	
 }
 /////////////////
+void cmc::load_minmax() {
+	string TempStr;
+	vector<string> TempVec;
+	ifstream min_max_stream("parabeta.gpl");
+	if(min_max_stream==NULL) {
+		cout<<" can not open file: [ parabeta.gpl ];"<<endl;
+		cout<<" mpi terminated, exit!"<<endl;
+		exit(IOERROR);
+	}
+	getline(min_max_stream, TempStr);
+	TempVec=Split(BFilter(TempStr));
+	_INDEX_minenerdis=atoi(BFilter(TempVec[1]).c_str())-1;
+	getline(min_max_stream, TempStr);
+	TempVec=Split(BFilter(TempStr));
+	_INDEX_maxenerdis=atoi(BFilter(TempVec[1]).c_str())-1;
+	cout<<" load: min_ener_dist: "<<_INDEX_minenerdis+1<<"::"<<_E_lowest+_E_interval*_INDEX_minenerdis<<endl;
+	cout<<" load: max_ener_dist: "<<_INDEX_maxenerdis+1<<"::"<<_E_lowest+_E_interval*_INDEX_maxenerdis<<endl;
+	cout<<" min_max info was loaded from: [ parabeta.gpl ];"<<endl;
+	min_max_stream.close();
+}
+/////////////////////////////////
+void cmc::chck_first_last_beta_alpha() {
+	int i=0;
+	for(i=_E_totalnum-1; i>=0; i--) {
+		if( fabs(_PARA_beta[i])>1e-12 || fabs(_PARA_alpha[i])>1e-12 ) {
+			tempindex_last_beta_alpha=i;
+			cout<<" "<<_PROC_ID<<"::tempindex_last_beta_alpha="<<i<<endl;
+			break;
+		}
+	}
+	for(i=0; i<_E_totalnum; i++) {
+		if( fabs(_PARA_beta[i])>1e-12 || fabs(_PARA_alpha[i])>1e-12 ) {
+			tempindex_first_beta_alpha=i;
+			cout<<" "<<_PROC_ID<<"::tempindex_first_beta_alpha="<<i<<endl;
+			break;
+		}
+	}
+}
+////////////////////////////
+void cmc::load_betaalpha() {// load on node 0 and then bcast to each node;
+	//bool error_load_beta_alpha=false;
+	if(_PROC_ID!=0) { 
+		return;
+	}
+	//int i=0;
+	string TempStr;
+	vector<string> TempVec;
+	
+	ifstream betaalpha_stream(_MUCAfile.c_str());
+	if(betaalpha_stream==NULL) {
+		cout<<" can not open file: [ "<<_MUCAfile<<" ];"<<endl;
+		exit(IOERROR);
+	}
+	for(int i=0; i<_E_totalnum; i++) {
+		getline(betaalpha_stream, TempStr);
+		TempVec=Split(BFilter(TempStr));
+		_PARA_beta[i]=atof(TempVec[1].c_str());
+		_PARA_alpha[i]=atof(TempVec[2].c_str());
+	}
+	cout<<" beta alpha info was loaded from: [ "<<_MUCAfile<<" ];"<<endl;
+	betaalpha_stream.close();
+
+	load_minmax();
+
+	chck_first_last_beta_alpha();//for finding the first pair of (alpha, beta) which is not (0.0, 0.0), after load_betaalpha();
+	
+	if(_PROC_ID==0) {
+		cout<<" beta alpha info was broadcasted to every node."<<endl; 
+	}
+	//_ENER_offset=_E_stepped[_INDEX_minenerdis];
+}
 /////////////////
 void cmc::run() {
 	//int i=0;
@@ -4596,7 +4973,8 @@ void cmc::run() {
 	//getchar();
 	check_energy();
 	rand_init(_PROC_ID);
-	srand(_PROC_ID*(unsigned)time(NULL));
+	//srand(_PROC_ID*(unsigned)time(NULL));
+	srand(_PROC_ID);
 
 	cout<<" starting production run..... "<<endl<<endl;
 
@@ -4628,9 +5006,10 @@ void cmc::run() {
 		//cout<<_I_eachstep<<endl;
 		if( _I_eachstep == _RUNTIMES_eachstep ) {
 			//tell_procid(); cout<<_I_totalnum<<endl;
-			if( ( (_I_totalnum+1)%_RUNTIMES_remgap ) == 0 ) {
+			if( (_I_totalnum+1)%_RUNTIMES_remgap == 0 ) {
 				MPI_Barrier(MPI_COMM_WORLD); // for collecting data!!!
 				run_rem();
+				//MPI_Barrier(MPI_COMM_WORLD); // for test!!!
 				/*if(_I_totalnum*_RUNTIMES_eachstep>1e5) {
 					rand_update(_PROC_ID);
 				}*/
@@ -4671,12 +5050,15 @@ void cmc::run() {
 			//trajectory_rec();			
 		}
 		//int tempdix=int(rand_seed(iseed_index)*_realSize);
-		//if ( tempdix==63 )cout<<tempdix<<endl;
+		/*if ( _I_eachstep%100 == 0  ) {
+			//cout<<tempdix<<endl;
+			tell_procid(); cout<<" run "<<_I_totalnum<<" : "<<_I_eachstep<<" done"<<endl;
+		}*/
 		if( make_mcmove(int( rand_seed(iseed_index)*_realSize) )>0  ) {
 			if( ener_dispatch() ) {
 				statistic();
-				if(_RUNTIMES_recording!=0) {
-					if ( (_I_eachstep+1)/_RUNTIMES_recording==0 ) {
+				if( _RUNTIMES_recording!=0 && _recordinglistlen>0 ) {
+					if ( _I_totalnum%_RUNTIMES_recording==0 ) {
 						recording();
 					}
 				}
@@ -4695,6 +5077,195 @@ void cmc::run() {
 		//fout_conformation_eachrep(true);
 	//}
 }
+/////////////////
+void cmc::calc_entropy_muca() {
+	if(_PROC_ID!=0) {
+		return;
+	}
+	int ie=0;
+	double SE_MAX=0.0;
+	if( _INDEX_minenerdis > _INDEX_maxenerdis ) {
+		ErrorMSG("_INDEX_minenerdis > _INDEX_maxenerdis :: cmuca::calc_entropy_muca() ");
+		exit(LOGICERROR);
+	}
+	double tempdist=0.0;
+	for(ie=0; ie<_E_totalnum; ie++) {
+		if( ( ie >= _INDEX_minenerdis ) && 
+			( ie <= _INDEX_maxenerdis ) && 
+			( fabs(_Probability_all[ie]) < 1e-6 ) ) {
+			tempdist=1.0;
+		} else {
+			tempdist=_Probability_all[ie];
+		}
+		if( fabs(tempdist) < 1e-6 ) {
+			_SE[ie]=_MIN_DOUBLE;
+		} else {
+			_SE[ie]=log(tempdist)+_PARA_beta[ie]*(_E_lowest+_E_interval*double(ie))+_PARA_alpha[ie];
+		}
+	}
+	///////////////////////////////////////
+	SE_MAX=_SE[0];
+	for(ie=1; ie<_E_totalnum; ie++) {
+		if(SE_MAX<_SE[ie]) {
+			SE_MAX=_SE[ie];
+		}
+	}
+	for(ie=0; ie<_E_totalnum; ie++) {
+		_SE[ie]=_SE[ie]-SE_MAX; //normalize all PB[];
+	}
+}
+/////////////////
+void cmc::fout_entropy() {
+	if( _PROC_ID!=0 ) {
+		return;
+	}
+	int ie=0;
+	tell_procid() ;cout<<" fout entropy ... to [ entropy.dat ] ";
+	ofstream entropy_stream( "entropy.dat" );
+	if(entropy_stream==NULL) {
+		ErrorMSG( string(" can not write file: [ entropy.dat ] :: cmuca::fout_entropy") );
+		exit(IOERROR);
+	}
+	for(ie=0; ie<_E_totalnum; ie++) {
+		entropy_stream<<setiosflags(ios::left)<<setw(10)
+			<<_E_lowest+_E_interval*double(ie)<<" "<<setw(20)<<_SE[ie]<<resetiosflags(ios::left)<<endl;
+	}
+	entropy_stream.close();
+	if(system("gnuplot draw_entropy.gpl")) {
+		cout<<" now you may check [ entropy.eps ]. "<<endl;
+	}
+	cout<<"done!"<<endl;
+}
+///////////////
+void cmc::calc_betaalpha_only() {
+	if(_PROC_ID!=0) {
+		return;
+	}
+	int ie=0;
+	//calc beta;
+	for(ie=_INDEX_maxenerdis; ie<_E_totalnum; ie++) {
+		_PARA_beta[ie]=_T_rep_eachrep[0];   // the highest temperature is imposed on node0;
+		//why this value, because this can ensure _beta to be positive,
+		//if _beta is negative, bigener*_beta+_alpha will be very small, and accepted easily,
+		//then problems coming, like to many bigener sample, and "factor==0.5" things happen!
+	}
+	for(ie=_INDEX_maxenerdis-1; ie>=_INDEX_minenerdis; ie--) {
+		_PARA_beta[ie]=(_SE[ie+1]-_SE[ie])/_E_interval;
+	}
+	for(ie=_INDEX_minenerdis-1; ie>=0; ie--) {
+		_PARA_beta[ie]=_PARA_beta[_INDEX_minenerdis];
+	}
+	//calc alpha; 
+	for(ie=_INDEX_maxenerdis; ie<_E_totalnum; ie++) {
+		_PARA_alpha[ie]=0.0;   // the highest temperature is imposed on node0;
+	}
+	for(ie=_INDEX_maxenerdis-1; ie>=_INDEX_minenerdis; ie--) {
+		_PARA_alpha[ie]=_PARA_alpha[ie+1]+(_PARA_beta[ie+1]-_PARA_beta[ie])*(_E_lowest+_E_interval*double(ie+1));
+	}
+	for(ie=_INDEX_minenerdis-1; ie>=0; ie--) {
+		_PARA_alpha[ie]=_PARA_alpha[_INDEX_minenerdis];
+	}
+}
+void cmc::fout_betaalpha() {
+	if( _PROC_ID ) {
+		return;
+	}
+	int i=0;
+	ofstream betaalpha_stream("beta.dat");
+	if(betaalpha_stream==NULL) {
+		cout<<" can not write into file: [ beta.dat ];"<<endl;
+		exit(IOERROR);
+	}
+	for(i=0; i<_E_totalnum; i++) {
+		betaalpha_stream<<setiosflags(ios::left)
+				        <<setw(10)<<_E_lowest+_E_interval*double(i)<<"   "
+				        <<setw(23)<<setprecision(18)<<setiosflags(ios::fixed)<<_PARA_beta[i]<<"   "
+						<<setw(23)<<setprecision(18)<<setiosflags(ios::fixed)<<_PARA_alpha[i]
+						<<resetiosflags(ios::left)<<endl;
+	}
+	cout<<" beta alpha info was written into: [ beta.dat ];"<<endl;
+	betaalpha_stream.close();
+	if(system("./smoothdata beta.dat beta_smoothed.dat 10")) {
+		cout<<" now you may check [ beta_smoothed.dat ]. "<<endl;
+	}
+	if(system("gnuplot draw_beta.gpl")) {
+		cout<<" now you may check [ beta.eps ]. "<<endl;
+	}
+	///////////////////////////////////////////////////////////////////////////
+}
+/////////////////
+void cmc::calc_betaalpha_muca() { // after ensembler;
+	MPI_Barrier(MPI_COMM_WORLD);
+	calc_entropy_muca();
+	////////////////////////////////////
+	fout_entropy();
+	////////////////////////////////////
+	calc_betaalpha_only();
+	////////////////////////////////////
+	fout_betaalpha();//only on node 0
+	////////////////////////////////////
+}
+/////////////////
+void cmc::mucarun() {
+	tell_procid(); cout<<" before the production run..."<<endl;
+	//cout<<dihedral2(1.0, 0.0, 0.0, 0.0, 1.0, 0.0 ,1.0,0.0,0.0);
+	//getchar();
+	check_energy();
+	rand_init(_PROC_ID);
+	//srand(_PROC_ID*(unsigned)time(NULL));
+	srand(_PROC_ID);
+
+	cout<<" starting production run..... "<<endl<<endl;
+
+	//_MC_NUM_TOT=0;
+	//_MC_NUM_SUC=0;
+	//_MC_NUM_FIL=0;
+
+	MEMOSETZERO(_MC_NUM_SUC_stat, sizeof(double)*_NUM_replicas);
+	MEMOSETZERO(_MC_NUM_TOT_stat, sizeof(double)*_NUM_replicas);
+	MEMOSETZERO(_MC_NUM_FIL_stat, sizeof(double)*_NUM_replicas);
+	
+	//MPI_Barrier(MPI_COMM_WORLD); // for beta_alpha broadcasting!
+	_numerpivot=1e-12;
+	for(_I_eachstep=0, _I_totalnum=0; _I_totalnum < _RUNTIMES_totalnum; _I_eachstep++) {
+		if(_I_eachstep >= _RUNTIMES_eachstep) {
+			if( (_I_totalnum+1)%10 == 0 ) {
+				tell_procid();
+				cout<<" _I_totalnum/_RUNTIMES_totalnum="<<setw(6)<<_I_totalnum+1
+					<<"/"<<setw(6)<<setiosflags(ios::left)<<_RUNTIMES_totalnum
+					<<resetiosflags(ios::left)<<endl;
+			}
+			_I_eachstep=0;
+			_I_totalnum++;
+		}
+		if( make_mcmove_muca(int( rand_seed(iseed_index)*_realSize) )>0  ) {
+			if( ener_dispatch() ) { 
+				statistic(); 
+				if( _RUNTIMES_recording!=0 && _recordinglistlen>0 ) {
+					if ( _I_totalnum%_RUNTIMES_recording==0 ) {
+						recording();
+					}
+				}
+			}
+		}
+	}
+	
+	fout_conformation(1);
+	MPI_Barrier(MPI_COMM_WORLD);
+	check_energy();
+	MPI_Barrier(MPI_COMM_WORLD);
+	// the following record;
+	//fout_ratio();
+	///////////////////////////////////////////////////////////////////
+	//wham_judge();//can be only here, namely, must be after fout_wham();
+	///////////////////////////////////////////////////////////////////			
+	
+	MPI_Barrier(MPI_COMM_WORLD); // for new beta_alpha file valid!
+	_I_totalnum=0;
+	//MPI_Barrier(MPI_COMM_WORLD);
+	getrealrate();
+}
+////////////
 void cmc::getrealrate() {
 	//
 	MPI_Reduce(_MC_NUM_SUC_stat, _MC_NUM_SUC_all, _NUM_replicas, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -4739,6 +5310,7 @@ void cmc::getrealrate() {
 /////////////////////////////////
 void cmc::ensembler() {
 	MPI_Reduce(_Probability.pArray[0], _Probability_tot.pArray[0], _NUM_replicas*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 	if(_PROC_ID!=0) {
 		return;
 	}
@@ -4795,7 +5367,6 @@ void cmc::ensembler() {
 	if(system("gnuplot draw_prob.gpl")){};
 	cout<<" u may check file: [ probability.eps ] now."<<endl;
 	delete[] FileName;
-	
 }
 /////////////////////////////////
 inline void cmc::init_statistic() {
@@ -4919,7 +5490,7 @@ inline void cmc::init_statistic() {
 					_indexRGSTAT[stat_i]=int((_RG2_ec[stat_i]-_RG_lowest)/_RG_interval);
 					if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 						_indexRGSTAT[stat_i]=_RG_totalnum-1;
-					} else if (_indexRGSTAT[stat_i]<0) {
+					} else if(_indexRGSTAT[stat_i]<0) {
 						_indexRGSTAT[stat_i]=0;
 					} else {
 						_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
@@ -5017,9 +5588,9 @@ inline void cmc::statistic() { //every step!!
 						_indexRGSTAT[stat_i]=int(((_RG2_x[stat_i]+_RG2_y[stat_i]+_RG2_z[stat_i])/stat_size-_RG_lowest)/_RG_interval);
 						if(_indexRGSTAT[stat_i]>=_RG_totalnum) {
 							_indexRGSTAT[stat_i]=_RG_totalnum-1;
-						} /*else if (_indexRGSTAT[stat_i]<0) {//normally impossible since rg from 0.0.
+						} else if (_indexRGSTAT[stat_i]<0) {//normally impossible if rg_low is from 0.0.
 							_indexRGSTAT[stat_i]=0;
-						} *//*else {//unchanged index
+						} /*else {//unchanged index
 							_indexRGSTAT[stat_i]=_indexRGSTAT[stat_i];
 						}*/
 						//cout<<"       "<<_indexRGSTAT[stat_i]<<endl;
@@ -5090,7 +5661,7 @@ inline void cmc::statistic() { //every step!!
 			//if(_COM_x_stat.pArray[stat_i][tempindex_judge]>1e-6) cout<<stat_i<<" "<<_COM_x_stat.pArray[stat_i][tempindex_judge]<<" "<<_RG2_x_stat.pArray[stat_i][tempindex_judge]<<endl;
 		}
 	}
-	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) { 
+	if( _NUM_chains>1 && _FLAG_rg2 && _FLAG_dis ) {
 		for(stat_i=0; stat_i<_NUM_chains; stat_i++) {
 			for(stat_j=0; stat_j<stat_i; stat_j++) {
 				tempindexstat_ij=_CINDEXMAP[stat_i][stat_j];
@@ -5193,17 +5764,32 @@ inline void cmc::statistic() { //every step!!
 }
 ////////////////
 void cmc::output_statistic() { //every _runtimes_eachstep
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Reduce(_ENERLJ_stat.pArray[0], _ENERLJ_stat_tot.pArray[0], (_NUM_chains+1)*_NUM_chains/2*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_ENERAG_stat.pArray[0], _ENERAG_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_ENERBF_stat.pArray[0], _ENERBF_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_ENERDH_stat.pArray[0], _ENERDH_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	if(_AG_flag) {
+		MPI_Reduce(_ENERAG_stat.pArray[0], _ENERAG_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
+	if(_BF_flag) {
+		MPI_Reduce(_ENERBF_stat.pArray[0], _ENERBF_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
+	if(_DH_flag) {
+		MPI_Reduce(_ENERDH_stat.pArray[0], _ENERDH_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	}
 	MPI_Reduce(_COM_x_stat.pArray[0], _COM_x_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_y_stat.pArray[0], _COM_y_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(_COM_z_stat.pArray[0], _COM_z_stat_tot.pArray[0], _NUM_chains*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_x_stat.pArray[0][0], _RG2_x_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_y_stat.pArray[0][0], _RG2_y_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	//MPI_Reduce(_RG2_z_stat.pArray[0][0], _RG2_z_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	if(_RG_totalnum>1) {
+		if(_PROC_ID==0) {
+			cout<<" now reduce the rg_plot..."<<endl;
+		}
+		MPI_Reduce(_RG2_stat.pArray[0][0], _RG2_stat_tot.pArray[0][0], _NUM_chains*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		if(_PROC_ID==0) {
+			cout<<" reduce rg_plot done!"<<endl;
+		}
+	}
 	if( _len_EINT>0 && _EINT_totalnum>1 ) {
 		MPI_Reduce(_EINT_stat.pArray[0], _EINT_stat_tot.pArray[0], _E_totalnum*_EINT_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
@@ -5218,6 +5804,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 		MPI_Reduce(_DIS_stat.pArray[0][0], _DIS_stat_tot.pArray[0][0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum*_RG_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(_DIS_stat_actual.pArray[0], _DIS_stat_actual_tot.pArray[0], (_NUM_chains-1)*_NUM_chains/2*_E_totalnum, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 	if(_PROC_ID!=0) {
 		return;
 	}
@@ -5279,6 +5866,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 						tempSum_all+=_DIS_stat_tot.pArray[_CINDEXMAP[stat_i][stat_j]][stat_k][stat_l]*(_DISSTAT_lowest+_DISSTAT_interval*stat_l);
 					}
 					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+						cout<<" distance ... "<<endl;
 						cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
 						exit(LOGICERROR);
 					}
@@ -5323,6 +5911,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 						tempSum_all+=_EINT_stat_tot.pArray[stat_k][stat_l]*(_EINT_lowest+_EINT_interval*stat_l);
 					}
 					if( fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
+						cout<<" eint ... "<<endl;
 						cout<<" something wrong: _Probability_all[stat_k]="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
 						exit(LOGICERROR);
 					}
@@ -5517,6 +6106,7 @@ void cmc::output_statistic() { //every _runtimes_eachstep
 					if( _RG_totalnum>1 && fabs(_Probability_all[stat_k])-tempNum_all>1e-12 ) {
 						/*cout<<" something wrong: trgx="<<tempNum_x<<" trgy="<<tempNum_y<<" trgz="<<tempNum_z
 							<<" _Probability_all[stat_k]="<<" temp_all="<<tempNum_all<<endl;*/
+						cout<<" rg ... "<<endl;
 						cout<<" something wrong: _Probability_all="<<_Probability_all[stat_k]<<" temp_all="<<tempNum_all<<endl;
 						exit(LOGICERROR);
 					}

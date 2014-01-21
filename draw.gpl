@@ -49,7 +49,10 @@ sigma=sigma/sigma
 print " epsilon=",epsilon," sigma=",sigma," r_c=",cut
 f(x)=4*(abs(epsilon)*pow(sigma/x,12)-epsilon*pow(sigma/x,6)) # normal lj
 pc=f(cut)
+pcacc=pcut
 print " u^{LJ}(r_c)=",pc
+print " u^{LJ,acc}(r_c)=",pcacc
+
 lj(x)=f(x)-pc # levelled lj
 ljc(x)=x<cut?(f(x)-pc):0 # lj_cut
 
@@ -76,10 +79,10 @@ if(epsilon>0) set arrow 1 from well,ylow to well,pwell nohead lt 6 lw 1 lc rgb "
               set label 1 at well+0.1,ylow-0.3*abs(epsilon) "{/Times-Italic 2^{1/6}{/Symbol s}_{ij}}" center font "UTF-8,12";\
               set arrow 5 from xlow,pwell to well,pwell nohead lt 1 lw 1 lc rgb "gray";\
               pm_label=(epsilon!=0)?(pwell/epsilon):0;\
-              set label 5 sprintf("{/Times-Italic u^{LJ}_{min}=%3.2f{/Symbol e}_{ij}}",pm_label) at xlow+0.035*sigma,pwell-0.3*abs(epsilon) left font "UTF-8,12"
+              set label 5 sprintf("{/Times-Italic u^{LJ}_{min}=%6.4f{/Symbol e}_{ij}}",pm_label) at xlow+0.035*sigma,pwell-0.3*abs(epsilon) left font "UTF-8,12"
 
 if(epsilon!=0) set arrow 2 from cut,ylow to cut,pc nohead lt 6 lw 1 lc rgb "black";\
-               set label 2 at cut+0.035*sigma,ylow+0.35*abs(epsilon) sprintf("{/Times-Italic r_{cut;ij}=%3.2f{/Symbol s}_{ij}}",cut) left font "UTF-8,12"
+               set label 2 at cut+0.035*sigma,ylow+0.35*abs(epsilon) sprintf("{/Times-Italic r_{cut;ij}=%6.4f{/Symbol s}_{ij}}",cut) left font "UTF-8,12"
 
 #set object 1 circle at cut,0.0 lw 3 size 0.05 fc rgb "gray" fs transparent #solid 4
 
@@ -89,8 +92,8 @@ if(epsilon!=0) set arrow 2 from cut,ylow to cut,pc nohead lt 6 lw 1 lc rgb "blac
 set arrow 3 from xlow,0 to xhigh,0 nohead lt 4 lw 1 lc rgb "black"
 
 if(epsilon!=0) set arrow 4 from xlow,pc to cut,pc nohead lt 1 lw 1 lc rgb "gray";\
-               pc_label=(epsilon!=0)?(pc/epsilon):0;\
-               set label 4 sprintf("{/Times-Italic u^{LJ}(r_{cut;ij})=%3.2f{/Symbol e}_{ij}}",pc_label) at xlow+0.035*sigma,pc+0.3*abs(epsilon) left font "UTF-8,12"
+               pc_label=(epsilon!=0)?(pcacc/epsilon):0;\
+               set label 4 sprintf("{/Times-Italic u^{LJ}(r_{cut;ij})=%6.4f{/Symbol e}_{ij}}",pc_label) at xlow+0.035*sigma,pc+0.3*abs(epsilon) left font "UTF-8,12"
 
 #set label 4 at xlow+0.04,pc-0.2*abs(epsilon) '{E_{cut}}=pc/epsilon{/Symbol e}' center font "Times New Roman,12"
 #0.2*0.5

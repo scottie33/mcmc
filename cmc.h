@@ -26,6 +26,7 @@ public:
 	//void make_dir();
 	void init_conformation_a(const int NUM_atoms, const int NUM_chains, const double LEN_bond, const string FILENAME_conf,const double xorigin, const double yorigin, const double zorigin);
 	void initialization();
+	void initialization_muca();
 	///////////////////////////////////////////////////////////////////////////
 	void load_conformation(); //'a' or 'f'	
 	void load_temperatures();
@@ -33,11 +34,16 @@ public:
 	///////////////////////////////////////////////////////////////////////////
 	void tell_procid();
 	void memo_allocation();
+	void memo_allocation_muca();
 	bool _Memory_freed;
 	void memo_setzero();    
+	void memo_setzero_muca();    
 	void memo_evaluation_fnode();
 	void memo_evaluation_bcast();
-	void memo_evaluation();
+	void memo_evaluation1();
+	void memo_evaluation2();
+	void memo_evaluation_rem();
+	void memo_evaluation_muca();
 	inline void check_memo();
 	void init_epsilonsigma();
 	void broadcast_epsilonsigma();
@@ -55,21 +61,30 @@ public:
 	void ensembler();
 	void output_statistic();
 	inline void make_choice(const int INDEX_coor);
+	inline void make_choice_muca();
 	//inline void prep_change(); //now embedded in make_choice;
 	inline bool make_change();
 
 	inline void  make_judge();
-	inline void  make_judge_mc();
+	inline void  make_judge2();
+	inline void  make_judge2_muca();
 
 	inline void make_accept();
+	//inline void make_accept_muca();
 	inline void make_reject_all();	
+	//inline void make_reject_all_muca();	
 	inline void make_reject_only_move();	
 
 	inline int  make_mcmove(const int INDEX_coor);
 	inline bool ener_dispatch();
-	inline int  make_mcmove_mc(const int INDEX_coor);
+	inline int  make_mcmove_muca(const int INDEX_coor);
 
 	int _RUNTIMES_recording;
+	int _recordinglistlen;
+	int* _recordinglist;
+	int* _recordingtemN;
+	int* _recordingmaxN;
+	int index_record;
 	char* _RecordingNAME;
 	inline void recording();
 	bool _RESTARTFlag;
@@ -83,6 +98,7 @@ public:
 	bool chck_bond_len();
     void fout_conformation(int CHCK_BOND_LEN_OR_NOT);
 	void memo_free();
+	void memo_free_muca();
 	//////////////////////////////////////////////////////////////////////////
 	CMolecule _system_;
 	string _FILENAME_conf;
@@ -117,7 +133,6 @@ public:
 	double* _E_rep;      // each replica
 	int*    _NUM_rem;
 	int*    _NUM_rem_acc;
-	double _B_delta;
 	int _INDEX_TEMPERATURE;
 
 	double _E_lowest;    //       -20
@@ -193,7 +208,6 @@ private:
 	//for use in calc_ener_each_atom;
 
 	//for judge
-	//int tempindex_judge_bak;
 	int tempindex_judge;
 	int tempnumer_ret;
 	double TempEner;
@@ -400,9 +414,39 @@ private:
 	vector<string> _SAVElist;
 	int _NUM_SAVElist;*/
 	
-	/*double* _PARA_beta;
+	string _MUCAfile;
+	//int  _MUCAIter;
+
+	int tempindex_last_beta_alpha;
+	int tempindex_first_beta_alpha;
+	double _B_new;
+	double _B_old;
+	double _B_delta;
+	double _REM_delta;
+	int tempindex_judge_bak;
+
+	void load_betaalpha();
+	void load_minmax();
+	void chck_first_last_beta_alpha();
+	void preparation();
+	void mucapreparation();
+
+	int _INDEX_minenerdis;
+	int _INDEX_maxenerdis;
+	double* _PARA_beta;
 	double* _PARA_alpha;
-	double* _PARA_beta_new;
+	double* _SE;
+
+	void calc_entropy_muca();
+	void fout_entropy();
+	void calc_betaalpha_only();
+	void fout_betaalpha();//only on node 0	
+public:
+	void mucarun();
+	void calc_betaalpha_muca();
+private:
+
+	/*double* _PARA_beta_new;
 	double* _PARA_alpha_new;*/
 ////////////////////////////////
 	CMyArray<double> _ENER_LJ_eachatom; //L-J potential;
@@ -653,6 +697,7 @@ public:
 	//void init_conformations();  //initialization;
 	//void load_conformations();  //just load conformations;
 	void run_with_stepnumber(const int stepnumber);
+	void run_with_stepnumber_muca(const int stepnumber);
 	void run();
 	void run_rem();
 	inline void   rand_update(const int procid);
@@ -680,7 +725,7 @@ private:
 	int _PROC_ID;
 	//int  _RUNTIMES_iteration;
 	//bool _START_fromzero;
-	//int  _ITER;
+	//
 
 	int _I_eachstep;
 	int _I_totalnum;

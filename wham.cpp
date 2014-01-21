@@ -380,6 +380,10 @@ int main(int argc, char** argv) {
 	_PARA_beta=new double[nene];
 	MEMOSETZERO(_PARA_beta, sizeof(double)*nene);
 
+	double* _PARA_alpha;
+	_PARA_alpha=new double[nene];
+	MEMOSETZERO(_PARA_alpha, sizeof(double)*nene);
+
 	double _E_interval=EBins[1]-EBins[0];	
 
 	for(ie=MaxIdx; ie<nene; ie++) {
@@ -388,12 +392,24 @@ int main(int argc, char** argv) {
 		//if _beta is negtive, bigener*_beta+_alpha will be very small, and accepted easily,
 		//then problems coming, like to many bigener sample, and "factor==0.5" things happen!
 	}
-	for(ie=MaxIdx-1; ie>MinIdx; ie--) {
+	for(ie=MaxIdx-1; ie>=MinIdx; ie--) {
 		_PARA_beta[ie]=(_SE[ie+1]-_SE[ie])/_E_interval;
 	}
-	for(ie=MinIdx; ie>=0; ie--) {
+	for(ie=MinIdx-1; ie>=0; ie--) {
 		_PARA_beta[ie]=_PARA_beta[MinIdx];
 	}
+
+	//calc alpha;
+	for(ie=MaxIdx; ie<nene; ie++) {
+		_PARA_alpha[ie]=0.0;   // the highest temperature is imposed on node0;
+	}
+	for(ie=MaxIdx-1; ie>=MinIdx; ie--) {
+		_PARA_alpha[ie]=_PARA_alpha[ie+1]+(_PARA_beta[ie+1]-_PARA_beta[ie])*EBins[ie+1];
+	}
+	for(ie=MinIdx-1; ie>=0; ie--) {
+		_PARA_alpha[ie]=_PARA_alpha[MinIdx];
+	}
+
 	double* _PARA_beta_T;
 	_PARA_beta_T=new double[nene];
 	MEMOSETZERO(_PARA_beta_T, sizeof(double)*nene);
@@ -414,7 +430,8 @@ int main(int argc, char** argv) {
 	}
 	for(ie=0; ie<nene; ie++) {
 		beta_stream<<setiosflags(ios::left)<<setw(10)
-			<<EBins[ie]<<" "<<setw(20)<<_PARA_beta[ie]<<resetiosflags(ios::left)<<endl;
+			<<EBins[ie]<<" "<<setw(20)<<_PARA_beta[ie]<<resetiosflags(ios::left)
+			           <<" "<<setw(20)<<_PARA_alpha[ie]<<resetiosflags(ios::left)<<endl;
 	}
 	beta_stream.close();		
 	cout<<"done!"<<endl;
@@ -453,6 +470,8 @@ int main(int argc, char** argv) {
 		}
 	}
 	beta_stream.close();
+	betgpl_stream<<" idxmin= "<<MinIdx<<endl; //must be the 1st line;
+	betgpl_stream<<" idxmax= "<<MaxIdx<<endl; //must be the 2nd line;
 	betgpl_stream<<" emin="<<EBins[MinIdx]<<endl;
 	betgpl_stream<<" emax="<<EBins[MaxIdx]<<endl;
 	betgpl_stream<<" bmax="<<tempmax<<endl;
@@ -483,6 +502,8 @@ int main(int argc, char** argv) {
 
 	delete[] _PARA_beta;
 	_PARA_beta=NULL;
+	delete[] _PARA_alpha;
+	_PARA_alpha=NULL;
 
 	delete[] _PARA_beta_T;
 	_PARA_beta_T=NULL;

@@ -56,4 +56,9 @@ oldgetPE.py [do not use this any more]
 ./distributeCONF.bash
 
 
+./smooth
+./derivative
+./getbeta.bash
+
+./getlocalcv.py [ smooth -> derive (indexlow indexhigh) -> getlocalcv ]
 

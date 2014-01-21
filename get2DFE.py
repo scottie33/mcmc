@@ -97,12 +97,16 @@ while True:
 			if tempnum > 0.0 :
 				if pelist[i] > 0.0:
 					tempfe=-(log(tempnum)+log(pelist[i]))*valTemp;
+					if tempfe>cutoff:
+						tempfe=cutoff
 					print >>outfp, "%s %s %f" % ( elements[0], elements[1], tempfe )
 				else:
-					print >>outfp, "%s %s %f" % ( elements[0], elements[1], cutoff )
+					tempfe=cutoff
+					print >>outfp, "%s %s %f" % ( elements[0], elements[1], tempfe )
 			else:
-				print >>outfp, "%s %s %f" % ( elements[0], elements[1], cutoff )
-			rgfelist[x]=rgfelist[x]+tempfe
+				tempfe=cutoff
+				print >>outfp, "%s %s %f" % ( elements[0], elements[1], tempfe )
+			rgfelist[x]=rgfelist[x]+exp(-tempfe/valTemp)
 			x=x+1
 		if len(elements)==0:
 			#print i
@@ -123,7 +127,7 @@ except IOError:
 	exit(-1)
 templen=len(rglist)
 for i in range(templen):
-	print >>outfprg, "%s %f" % (rglist[i], rgfelist[i])
+	print >>outfprg, "%s %f" % (rglist[i], -log(rgfelist[i])*valTemp)
 outfprg.close()
 print "",i,"data series loaded." 
 

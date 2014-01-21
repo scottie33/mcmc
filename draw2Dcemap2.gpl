@@ -3,7 +3,10 @@ reset
 
 #emin=emin/epsilon
 #emax=emax/epsilon
-set term post enh size 12,6.75 color #monochrome 
+#set term post enh size 12,6.75 color #monochrome 
+
+
+set term postscript eps color  solid enhanced  size 7,4.5 font ",28"
 set out 'oxmap.eps'
 
 load 'paraentropy.gpl'
@@ -17,12 +20,20 @@ load 'paraentropy.gpl'
 #set cntrparam bspline
 #set title "3D gnuplot demo - contour of Sinc function" 
 
-set xlabel '{/Times-Italic E/{/Symbol e}}' font ",36"
+#set xlabel '{/Times-Italic E/{/Symbol e}/N}' font ",36"
 
-set ylabel '{/Times-Italic O(E)}' font ",36" #at xmin-(xmax-xmin)/10.0,ymin+(ymax-ymin)/2.0 #rotate by -90
+set xlabel '{/Times-Italic E/N}' font ",48"
 
-ztitle='{/Times-Italic Free Energy {/Symbol e}}'
+set ylabel '{/Times-Italic <R_{G}^2>}' font ",48"
+
+set zlabel '{/Times-Italic f(R_{G}^2,E;{/Symbol b}_{CE})}' font ",36" #offset -1.5,0,0 #rotate by -90
+
+ztitle='{/Times-Italic f(R_{G}^2,E;{/Symbol b}_{CE})}'
 set zlabel ztitle font ",36" tc rgb "black" rotate by 90
+
+#set xtics out
+
+set xtics 0.2
 
 set xtics font ",20" tc rgb "black"
 
@@ -30,14 +41,13 @@ set ytics font ",20" tc rgb "black"
 
 set ztics font ",20" tc rgb "black"
 
-set mxtics 5
-set mytics 5
+set mxtics 10
 
 #set logscale x
 
 set grid xtics ytics mxtics mytics
 
-set isosamples 50,50
+#set isosamples 50,50
 
 #set hidden3d
 
@@ -56,16 +66,21 @@ load 'rangetemp.gpl'
 if(xangle!=0 || zangle!=0) set view xangle,zangle;\
 else set view map
 
-xmin=emin/epsilon
-xmax=emax/epsilon
+xmin=xmin/55/epsilon
+xmax=xmax/55/epsilon
 
-ymin=sqrt(ymin)/sigma
-ymax=sqrt(ymax)/sigma
+set xtics 0.1
+
+ymin=(ymin)/sigma
+ymax=(ymax)/sigma
 
 #set xrange [log10(xmin):log10(xmax)]
 
 set yrange [ymin:ymax]
 set xrange [xmin:xmax]
+
+set yrange [2.45:3.0]
+set xrange [-4.7:-3.8]
 
 #set pm3d map
 #set size square
@@ -78,11 +93,23 @@ unset key
 #set contour base
 #set cntrparam levels 50
 
+set style line 1 lw 3 lc rgb "black" 
+set style line 2 lw 3 lc rgb "brown"
+set style line 3 lw 3 lc rgb "goldenrod"
+set style line 4 lw 3 lc rgb "orange"
+set style line 5 lw 3 lc rgb "red"
+set style line 6 lw 3 lc rgb "magenta"
+set style line 7 lw 4 lc rgb "purple"
+set style line 8 lw 4 lc rgb "blue"
+set style line 9 lw 4 lc rgb "cyan"
+set style increment userstyles
+#set zrange [0.01:20] noreverse nowriteback
+
 set logscale z
 
 print ' plotting ...'
-if(xangle!=0 || zangle!=0) splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w pm3d title ztitle;\
-else splot 'inputfile.dat' u ($1/epsilon):(sqrt($2)/sigma):3 w l lt -1 lw 1.5 title ztitle
+if(xangle!=0 || zangle!=0) splot 'inputfile.dat' u ($1/55/epsilon):(($2)/sigma/sigma):3 w pm3d title ztitle;\
+else splot 'inputfile.dat' u ($1/55/epsilon):(($2)/sigma/sigma):3 w l lt -1 lw 1.5 title ztitle
 print ' eps plotted!'
 
 

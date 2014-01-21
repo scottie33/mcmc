@@ -12,19 +12,27 @@ python get2DFE.py $1 $2 $3
 cp rg2maprange.gpl rangetemp.gpl
 echo "coeff=$4" >> rangetemp.gpl
 echo "set palette gray negative" >>rangetemp.gpl
-#echo "set palette rgbformulae 22, 13,-31" >> rangetemp.gpl
+#echo "set palette rgbformulae 23,28,3" >> rangetemp.gpl
+#echo "set palette rgbformulae 33,13,10" >> rangetemp.gpl
+#echo "set palette rgbformulae 7,5,15" >> rangetemp.gpl
+#echo "set palette defined ( 0 '#9FAFDF', 1 'blue', 2 '#4B0082', 3 'white' ) " >> rangetemp.gpl
+echo "set palette defined ( 0 '#9FAFDF', 1 'red', 2 '#4B0082', 3 'white' ) " >> rangetemp.gpl
+#echo "set palette model HSV rgbformulae 7,5,15" >>rangetemp.gpl
 
+echo "unset grid " >> rangetemp.gpl
 if [ $5 -eq 0 -a $6 -eq 0 ]; then
 	#echo "set pm3d map" >> rangetemp.gpl
 	#echo "unset pm3d" >> rangetemp.gpl
 	echo "unset surface" >> rangetemp.gpl
 	#echo "set hidden3d back offset 1 trianglepattern 3 undefined 1 altdiagonal bentover" >> rangetemp.gpl
-	#echo "set isosamples 50,50" >> rangetemp.gpl
+	echo "set isosamples 50,50" >> rangetemp.gpl
 	#echo "set dgrid3d" >> rangetemp.gpl
 	echo "set contour base" >> rangetemp.gpl
-	echo "set cntrparam " >> rangetemp.gpl
-	echo "set cntrparam levels 50" >> rangetemp.gpl
-	#echo "set cntrparam order 5" >> rangetemp.gpl
+	echo "set cntrparam bspline" >> rangetemp.gpl
+	echo "set cntrparam levels 50 " >> rangetemp.gpl
+	#echo "set cntrparam levels incremental 0.01,0.25,5" >> rangetemp.gpl
+	echo "set cntrparam levels discrete 2.785,2.85,3.0,3.25,3.6,3,78,3.95,4.5,5.25" >> rangetemp.gpl
+	echo "set cntrparam order 5" >> rangetemp.gpl
 fi
 
 echo "xangle=$5" >> rangetemp.gpl

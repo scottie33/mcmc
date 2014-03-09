@@ -137,16 +137,16 @@ int main(int argc, char** argv) {
 			}
 		}
 		//cout<<" maxdis["<<rs<<"] at "<<_INDEX_maxenerdis_eachrep[rs]<<" w/ pe="<<ProbEach.pArray[rs][_INDEX_maxenerdis_eachrep[rs]]<<endl;
-		_INDEX_minenerdis_eachrep[rs]=0;
+		_INDEX_minenerdis_eachrep[rs]=_INDEX_maxenerdis_eachrep[rs];
 		for(ie=_INDEX_maxenerdis_eachrep[rs]; ie>=0; ie--) {
 			if( ProbEach.pArray[rs][ie]<1e-6 ) {
 				_INDEX_minenerdis_eachrep[rs]=ie+1;
 				break;
 			}
 		}
-		if(_INDEX_minenerdis_eachrep[rs]>_INDEX_maxenerdis_eachrep[rs]) {
+		/*if(_INDEX_minenerdis_eachrep[rs]>_INDEX_maxenerdis_eachrep[rs]) {
 			_INDEX_minenerdis_eachrep[rs]=_INDEX_maxenerdis_eachrep[rs];
-		}
+		}*/
 		cout<<" mindis["<<rs<<"] at "<<_INDEX_minenerdis_eachrep[rs]<<" "<<ProbEach.pArray[rs][_INDEX_minenerdis_eachrep[rs]]<<endl;
 		for(ie=_INDEX_maxenerdis_eachrep[rs]; ie<nene; ie++) {
 			if( ProbEach.pArray[rs][ie]<1e-6 ) {
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
 	}
 	////////////////////////////////////////////////////	
 	cout<<" calc: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<ProAll[_INDEX_minenerdis]<<" E="<<EBins[_INDEX_minenerdis]<<":"<<EBins[_INDEX_minenerdis]/epsilon<<endl;
-	cout<<" calc: max_ener_dist: "<<_INDEX_maxenerdis<<"::"<<ProAll[_INDEX_maxenerdis]<<" E="<<EBins[_INDEX_maxenerdis]<<":"<<EBins[_INDEX_minenerdis]/epsilon<<endl;
+	cout<<" calc: max_ener_dist: "<<_INDEX_maxenerdis<<"::"<<ProAll[_INDEX_maxenerdis]<<" E="<<EBins[_INDEX_maxenerdis]<<":"<<EBins[_INDEX_maxenerdis]/epsilon<<endl;
 	delete[] _INDEX_maxenerdis_eachrep;
 	delete[] _INDEX_minenerdis_eachrep;
 

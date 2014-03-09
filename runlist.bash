@@ -5,7 +5,7 @@ numprocs=64
 host=hostfile
 
 startid=1 
-endid=1
+endid=3
 
 echo " mcmc proc ... "
 for((i=0;i<${runtimes};i++));do
@@ -42,12 +42,19 @@ for((i=${startid};i<=${endid};i++)); do
 		cp -f ../draw_entropy.gpl ./; cp -f ../draw_beta.gpl ./;  cp -f ../draw.gpl ./
 		cp -f ../draw_prob.gpl ./; cp -f ../pdb2psf.py ./; cp -f ../smoothdata ./
 		cp -f ../paraentropy.gpl ./;
+		cp ../getDIS.bash ./
+		cp ../draw_RG2.gpl ./
+		cp ../draw_EBF.gpl ./
+		cp ../draw_ELJ.gpl ./
 		cd ..
 	fi
 	cd dirmuca
 	# mpirun -np $numprocs ./muca
 	mpirun -np $numprocs --hostfile $host ./muca
-	if [ $i -lt 10 ]; then
+	gnuplot < draw_prob.gpl
+	gnuplot < draw_entropy.gpl
+	gnuplot < draw_beta.gpl
+        if [ $i -lt 10 ]; then
 		cp beta.dat beta.0$i.dat
 		cp entropy.dat entropy.0$i.dat
 	else
@@ -56,6 +63,5 @@ for((i=${startid};i<=${endid};i++)); do
 	fi
 	cd ..
 done
-
 
 

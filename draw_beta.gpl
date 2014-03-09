@@ -23,7 +23,7 @@ set yrange [bmin:bmax]
 set ytics nomirror #font "UTF-8,12" #tc rgb "#880000"
 #set y2tics tc rgb "#008800"
 set xtics nomirror #font "UTF-8,12" #tc rgb "#0000ff"
-xinterval=(emax-emin)/5
+xinterval=(int(emax*10.0-emin*10.0))/100.0
 set xtics xinterval
 
 #set autoscale

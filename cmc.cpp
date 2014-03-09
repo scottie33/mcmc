@@ -116,7 +116,7 @@ cmc::cmc() {
 	_ACCINDEX=1000;
 
 	_NUM_replicas=0;
-	_T_rep_eachrep=NULL;      // each replica
+	_T_retro_eachrep=NULL;      // each replica
 	_T_eachrep=NULL;      // each replica
 	_Index_T_rep=NULL;        // each replica, only on node0, index of which rep the T is in;
 	_Index_rep_T=NULL;        // each replica, every node,    index of which T the rep is;
@@ -231,7 +231,7 @@ void cmc::memo_allocation() {
 		ErrorMSG(string("_NUM_atoms==0;::cmc::memo_allocation"));
 		exit(SIZEERROR);
 	}
-	_T_rep_eachrep=new double[_NUM_replicas];      // each replica
+	_T_retro_eachrep=new double[_NUM_replicas];      // each replica
 	_T_eachrep=new double[_NUM_replicas];      // each replica
 	_Index_T_rep=new int[_NUM_replicas];        // each replica, only on node0, index of which rep the T is in;
 	_Index_rep_T=new int[_NUM_replicas];        // each replica, every node,    index of which T the rep is;
@@ -463,7 +463,7 @@ void cmc::memo_setzero() {
 
 	MEMOSETZERO(ir, sizeof(int)*98);
 
-	MEMOSETZERO(_T_rep_eachrep, sizeof(double)*_NUM_replicas);
+	MEMOSETZERO(_T_retro_eachrep, sizeof(double)*_NUM_replicas);
 	MEMOSETZERO(_T_eachrep, sizeof(double)*_NUM_replicas);
 	MEMOSETZERO(_Index_T_rep, sizeof(int)*_NUM_replicas);
 	MEMOSETZERO(_Index_rep_T, sizeof(int)*_NUM_replicas);
@@ -826,22 +826,32 @@ void cmc::memo_evaluation_bcast() {
 ///////////////////////////
 inline void cmc::loadrestart(double ogboxlx, double ogboxly, double ogboxlz) {
 	if(_RESTARTFlag) {
-		cout<<" @Proc"<<setw(3)<<_PROC_ID<<" :: restart being loading."<<endl;
-		char* tFILENAME_conf;
-		tFILENAME_conf=new char[10];
-		chck_bond_len();//after each make mapping!
-		sprintf(tFILENAME_conf, "confT%03d.pdb", _PROC_ID+1);
-		_system_.memo_free();
-		cout<<" @Proc"<<setw(3)<<_PROC_ID<<" loading [ "<<tFILENAME_conf<<" ] ... "<<endl;
-		_system_.readpdbinfo(tFILENAME_conf, 1.0, false, true);
-		int i=0;
-		for(i=0; i<_NUM_atoms; i++) {
-			_XX[i+1]=_system_.allatoms[i].x_coordinate;
-			_YY[i+1]=_system_.allatoms[i].y_coordinate;
-			_ZZ[i+1]=_system_.allatoms[i].z_coordinate;
+		if(_PROC_ID==0) {
+			for(int m=0; m<_NUM_replicas; m++) {
+				cout<<" for @Proc["<<setw(3)<<m<<"] :: restart being loading."<<endl;
+				char* tFILENAME_conf;
+				tFILENAME_conf=new char[10];
+				chck_bond_len();//after each make mapping!
+				sprintf(tFILENAME_conf, "confT%03d.pdb", m+1);
+				_system_.memo_free();
+				cout<<" for @Proc["<<setw(3)<<m<<"] loading [ "<<tFILENAME_conf<<" ] ... "<<endl;
+				_system_.readpdbinfo(tFILENAME_conf, 1.0, false, true);
+				int i=0;
+				for(i=0; i<_NUM_atoms; i++) {
+					_XX_allrep.pArray[m][i+1]=_system_.allatoms[i].x_coordinate;
+					_YY_allrep.pArray[m][i+1]=_system_.allatoms[i].y_coordinate;
+					_ZZ_allrep.pArray[m][i+1]=_system_.allatoms[i].z_coordinate;
+				}
+			}
 			//cout<<" "<<_XX[i]<<" "<<_YY[i]
 		}
-		cout<<" @Proc"<<setw(3)<<_PROC_ID<<" rebuilding the system..."<<endl;
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Scatter(_XX_allrep.pArray[0], _SIZE_memo, MPI_DOUBLE, _XX, _SIZE_memo, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Scatter(_YY_allrep.pArray[0], _SIZE_memo, MPI_DOUBLE, _YY, _SIZE_memo, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Scatter(_ZZ_allrep.pArray[0], _SIZE_memo, MPI_DOUBLE, _ZZ, _SIZE_memo, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+		cout<<" @Proc["<<setw(3)<<_PROC_ID<<"] rebuilding the system..."<<endl;
+		int i=0;
 		for(i=1; i<_NUM_atoms; i++) {
 			while( (_XX[i+1]-_XX[i])>(ogboxlx/2.0) ) {
 				_XX[i+1]=_XX[i+1]-ogboxlx;
@@ -1068,7 +1078,7 @@ void cmc::memo_free() {
 	delete[] ir;
 	ir=NULL;
 
-	delete[] _T_rep_eachrep; _T_rep_eachrep=NULL;
+	delete[] _T_retro_eachrep; _T_retro_eachrep=NULL;
 	delete[] _T_eachrep; _T_eachrep=NULL;
 	delete[] _Index_T_rep; _Index_T_rep=NULL;
 	delete[] _Index_rep_T; _Index_rep_T=NULL;
@@ -1967,17 +1977,17 @@ void cmc::load_temperatures() {//initialization temperatures;
 			exit(IOERROR);
 		} else {
 			_T_eachrep[i]=atof( Split( BFilter( TempStr ) )[0].c_str() );
-			_T_rep_eachrep[i]=1.0/_T_eachrep[i];
+			_T_retro_eachrep[i]=1.0/_T_eachrep[i];
 			_Index_T_rep[i]=i;
 			_Index_rep_T[i]=i;
-			//cout<<setw(3)<<setiosflags(ios::left)<<"t:"<<_T_rep_eachrep[i]<<resetiosflags(ios::left)<<endl;
+			//cout<<setw(3)<<setiosflags(ios::left)<<"t:"<<_T_retro_eachrep[i]<<resetiosflags(ios::left)<<endl;
 		}
 	}
 	IFSTREAM_temperatruelist.close();
 }
 ///////////////////////////
 void cmc::scatter_temperatures() {
-	MPI_Bcast(_T_rep_eachrep, _NUM_replicas, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(_T_retro_eachrep, _NUM_replicas, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(_T_eachrep, _NUM_replicas, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatter(_Index_rep_T, 1, MPI_INT, &_INDEX_TEMPERATURE, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	//MPI_Scatter(_Index_T_rep, 1, MPI_INT, &_INDEX_TEMPERATURE, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -1985,10 +1995,10 @@ void cmc::scatter_temperatures() {
 	/*if(_PROC_ID) {
 		for(int i=0; i<_NUM_replicas; i++) {
 			tell_procid(); cout<<setw(3)<<setiosflags(ios::left)<<"t:"
-			<<_T_rep_eachrep[i]<<resetiosflags(ios::left)<<endl;
+			<<_T_retro_eachrep[i]<<resetiosflags(ios::left)<<endl;
 		}
 	}*/
-	_TEMPERATURE_REP=_T_rep_eachrep[_INDEX_TEMPERATURE];
+	_TEMPERATURE_REP=_T_retro_eachrep[_INDEX_TEMPERATURE];
 	_TEMPERATURE=_T_eachrep[_INDEX_TEMPERATURE];
 	if(_TEMPERATURE_REP<=0.0) {
 		tell_procid(); cout<<"_TEMPERATURE_REP="<<_TEMPERATURE_REP<<"<=0.0"<<endl;
@@ -3268,36 +3278,59 @@ inline void cmc::make_judge2() { // rem; not muca;
 }
 inline void cmc::make_judge2_muca() { //muca; not rem;
 	//add code here;
-	_ENER_total+=_ENER_delta; // this is carefully considered,
-									  // cos' big number attempt will affect _ENER_total much,
-									  // and then when you change _ENER_total back,
-									  // the precision can be not conserved!
-	if( _ENER_total > _E_lowest && _ENER_total < _E_highest ) {
-		tempindex_judge=int((_ENER_total-_E_lowest)/_E_interval);
-		_B_new=_ENER_total*_PARA_beta[tempindex_judge]+_PARA_alpha[tempindex_judge];
-		_B_delta=_B_new-_B_old;
+	TempEner=_ENER_total+_ENER_delta; // this is carefully considered,!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+									  // cos' big number attempt will affect _ENER_total much,!!!!!!!!!!
+									  // and then when you change _ENER_total back,!!!!!!!!!!!!!!!!!!!!!
+									  // the precision can be not conserved!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if( TempEner > _E_lowest && TempEner < _E_highest ) {
+		tempindex_judge=int((TempEner-_E_lowest)/_E_interval);
+		_B_new=TempEner*_PARA_beta[tempindex_judge]+_PARA_alpha[tempindex_judge];
+		//_B_delta=_B_new-_B_old;
 		//tempnumer_ret=0;//no count! but need reject_all! 
 						//basically not happened cos' energy limit is chosen by myself!
-	} else if( _ENER_total >= _E_highest ) {
+	} else if( TempEner >= _E_highest ) {
 		//if( tempindex_judge < _E_totalnum )//can not use this? cos' tempindex_judge maybe out of limit!
 		                                     //type [int] is too short!!
 		tempindex_judge=_E_totalnum-1;
-		_B_new=_ENER_total*_PARA_beta[_E_totalnum-1]+_PARA_alpha[_E_totalnum-1];
-		_B_delta=_B_new-_B_old;
+		_B_new=TempEner*_PARA_beta[tempindex_last_beta_alpha]+_PARA_alpha[tempindex_last_beta_alpha];
+		//_B_delta=_B_new-_B_old;
 	} else {
 		tempindex_judge=0;
-		_B_new=_ENER_total*_PARA_beta[0]+_PARA_alpha[0];
-		_B_delta=_B_new-_B_old;
-	}
+		_B_new=TempEner*_PARA_beta[tempindex_first_beta_alpha]+_PARA_alpha[tempindex_first_beta_alpha];
+		//_B_delta=_B_new-_B_old;
+	} 
+	_B_delta=_B_new-_B_old;
+
+	/*cout<<"tempindex_judge="<<tempindex_judge<<endl;
+	cout<<"TempEner="<<TempEner<<endl;
+	cout<<"_B_new="<<_B_new<<endl;
+	cout<<"_B_old="<<_B_old<<endl;
+	cout<<"_B_delta="<<_B_delta<<endl;*/
+	
 	if( _B_delta > 0.0 ) {
-		if( exp(_B_delta)>rand_seed(iseed_rand) ) { //rand<p
-			tempnumer_ret=2;// succ;
+		if( exp(-_B_delta)>rand_seed(iseed_rand) ) { //rand<p
+			if( TempEner > _E_highest ) {
+				tempnumer_ret=0; //for statistical security.
+			} else {
+				tempnumer_ret=2;// succ;
+			}
 		} else {
 			tempnumer_ret=1;// fail;
 		}
 	} else {
-		tempnumer_ret=2;// succ;
+		if( TempEner > _E_highest ) {
+			tempnumer_ret=0; //for statistical security.
+		} else {
+			tempnumer_ret=2;// succ;
+		}
 	}
+	/*if(tempnumer_ret==2) {
+		cout<<"succ"<<endl;
+	} else {
+		cout<<"fail"<<endl;
+	}
+	cout<<endl;*/
+	//getchar();
 }
 ///////////////////////////
 /*inline void cmc::make_accept_muca() {
@@ -3472,7 +3505,6 @@ inline int cmc::make_mcmove(const int INDEX_coor) {
 	}	
 }
 ///////////////////////////
-
 inline int cmc::make_mcmove_muca(const int INDEX_coor) {
 	make_choice(_Runninglist[INDEX_coor]);
 	make_choice_muca();
@@ -3481,6 +3513,7 @@ inline int cmc::make_mcmove_muca(const int INDEX_coor) {
 		make_judge2_muca();
 		if(tempnumer_ret==2) {//succ==2
 			//cout<<" succ!! "<<_INDEX_chosen<<endl;
+			_ENER_total=TempEner; //_ENER_total+=_ENER_delta;
 			make_accept();
 			//make_accept_muca();
 		/*cout<<" "<<_INDEX_chosen-1<<": "<<_ENER_AG_eachatom[_INDEX_chosen-1]
@@ -3489,12 +3522,14 @@ inline int cmc::make_mcmove_muca(const int INDEX_coor) {
 		} else if(tempnumer_ret==1) {//fail==1
 			_B_new=_B_old;
 			tempindex_judge=tempindex_judge_bak;
-			_ENER_total-=_ENER_delta;
 			make_reject_all();
-		} /*else if(tempnumer_ret==0) {//false==0!
-			_ENER_total-=_ENER_delta;
+		} else if(tempnumer_ret==0) {//false==0!
+			_B_new=_B_old;
+			tempindex_judge=tempindex_judge_bak;
 			make_reject_all(); 
-		}*/ else if(tempnumer_ret==-1) {//false==-1, cos' no new energy calc!
+		} else if(tempnumer_ret==-1) {//false==-1, cos' no new energy calc!
+			_B_new=_B_old;
+			tempindex_judge=tempindex_judge_bak;
 			make_reject_only_move();
 		}
 		//cout<<" _ENER_total="<<_ENER_total<<endl;
@@ -4719,12 +4754,12 @@ void cmc::mucapreparation() {
 	} else if( _ENER_total >= _E_highest ) { //important;
 		tempindex_judge=_E_totalnum-1;
 		tempindex_judge_bak=tempindex_judge;
-		_B_new=_ENER_total*_PARA_beta[_E_totalnum-1]+_PARA_alpha[_E_totalnum-1];//important!!!
+		_B_new=_ENER_total*_PARA_beta[tempindex_last_beta_alpha]+_PARA_alpha[tempindex_last_beta_alpha];//important!!!
 		_B_old=_B_new;
 	} else { //important;
 		tempindex_judge=0;
 		tempindex_judge_bak=tempindex_judge;
-		_B_new=_ENER_total*_PARA_beta[0]+_PARA_alpha[0];//important!!!
+		_B_new=_ENER_total*_PARA_beta[tempindex_first_beta_alpha]+_PARA_alpha[tempindex_first_beta_alpha];//important!!!
 		_B_old=_B_new;
 	}
 	//initialization end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4846,7 +4881,7 @@ void cmc::run_rem() {
 		for(i=_NUM_replicas-1; i>0; i--) { //pair(i, i-1)
 			index_i=_Index_T_rep[i]; // t[i] in which rep
 			index_j=_Index_T_rep[i-1]; //
-			_REM_delta=(_T_rep_eachrep[i]-_T_rep_eachrep[i-1])*(_E_rep[index_j]-_E_rep[index_i]);
+			_REM_delta=(_T_retro_eachrep[i]-_T_retro_eachrep[i-1])*(_E_rep[index_j]-_E_rep[index_i]);
 			//+1.5_realSize*(_E_rep[index_j]-_E_rep[index_i])
 			//cout<<"_REM_delta="<<_REM_delta<<endl;
 			_NUM_rem[i-1]+=1;
@@ -4857,9 +4892,9 @@ void cmc::run_rem() {
 			}
 			//exchange these two conformation pair(i, i-1)
 		
-			/*TTemp=_T_rep_eachrep[index_i];
-			_T_rep_eachrep[index_i]=_T_rep_eachrep[index_j];	
-			_T_rep_eachrep[index_j]=TTemp;*/
+			/*TTemp=_T_retro_eachrep[index_i];
+			_T_retro_eachrep[index_i]=_T_retro_eachrep[index_j];	
+			_T_retro_eachrep[index_j]=TTemp;*/
 
 			_Index_T_rep[i]=index_j;	
 			_Index_T_rep[i-1]=index_i;
@@ -4869,12 +4904,12 @@ void cmc::run_rem() {
 
 			_NUM_rem_acc[i-1]+=1;
 		}
-		/*tell_id();cout<<" T="<<1.0/_T_rep_eachreplica[0]
+		/*tell_id();cout<<" T="<<1.0/_T_retro_eachreplica[0]
 			      <<" index_of_T="<<_Index_REP_eachreplica[0]
 				  <<" index_of_R="<<_Index_T_eachreplica[_Index_REP_eachreplica[0]]<<endl;*/
 	}
 	MPI_Scatter(_Index_rep_T, 1, MPI_INT, &_INDEX_TEMPERATURE, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	_TEMPERATURE_REP=_T_rep_eachrep[_INDEX_TEMPERATURE];
+	_TEMPERATURE_REP=_T_retro_eachrep[_INDEX_TEMPERATURE];
 	_TEMPERATURE=_T_eachrep[_INDEX_TEMPERATURE];
 	//tell_procid(); cout<<" T["<<_INDEX_TEMPERATURE<<"]="<<_TEMPERATURE<<"; "<<endl;//T_rep="<<_TEMPERATURE_REP<<";"<<endl;
 	//////////////////
@@ -4904,12 +4939,12 @@ void cmc::load_minmax() {
 	}
 	getline(min_max_stream, TempStr);
 	TempVec=Split(BFilter(TempStr));
-	_INDEX_minenerdis=atoi(BFilter(TempVec[1]).c_str())-1;
+	_INDEX_minenerdis=atoi(BFilter(TempVec[1]).c_str());
 	getline(min_max_stream, TempStr);
 	TempVec=Split(BFilter(TempStr));
-	_INDEX_maxenerdis=atoi(BFilter(TempVec[1]).c_str())-1;
-	cout<<" load: min_ener_dist: "<<_INDEX_minenerdis+1<<"::"<<_E_lowest+_E_interval*_INDEX_minenerdis<<endl;
-	cout<<" load: max_ener_dist: "<<_INDEX_maxenerdis+1<<"::"<<_E_lowest+_E_interval*_INDEX_maxenerdis<<endl;
+	_INDEX_maxenerdis=atoi(BFilter(TempVec[1]).c_str());
+	cout<<" load: min_ener_dist: "<<_INDEX_minenerdis<<"::"<<_E_lowest+_E_interval*_INDEX_minenerdis<<endl;
+	cout<<" load: max_ener_dist: "<<_INDEX_maxenerdis<<"::"<<_E_lowest+_E_interval*_INDEX_maxenerdis<<endl;
 	cout<<" min_max info was loaded from: [ parabeta.gpl ];"<<endl;
 	min_max_stream.close();
 }
@@ -5131,7 +5166,7 @@ void cmc::fout_entropy() {
 			<<_E_lowest+_E_interval*double(ie)<<" "<<setw(20)<<_SE[ie]<<resetiosflags(ios::left)<<endl;
 	}
 	entropy_stream.close();
-	if(system("gnuplot draw_entropy.gpl")) {
+	if(system("gnuplot < draw_entropy.gpl")) {
 		cout<<" now you may check [ entropy.eps ]. "<<endl;
 	}
 	cout<<"done!"<<endl;
@@ -5144,10 +5179,10 @@ void cmc::calc_betaalpha_only() {
 	int ie=0;
 	//calc beta;
 	for(ie=_INDEX_maxenerdis; ie<_E_totalnum; ie++) {
-		_PARA_beta[ie]=_T_rep_eachrep[0];   // the highest temperature is imposed on node0;
+		_PARA_beta[ie]=_T_retro_eachrep[0];   // the highest temperature is imposed on node0;
 		//why this value, because this can ensure _beta to be positive,
 		//if _beta is negative, bigener*_beta+_alpha will be very small, and accepted easily,
-		//then problems coming, like to many bigener sample, and "factor==0.5" things happen!
+		//then comes the problem, like to many bigener sample, and "factor==0.5" things happen!
 	}
 	for(ie=_INDEX_maxenerdis-1; ie>=_INDEX_minenerdis; ie--) {
 		_PARA_beta[ie]=(_SE[ie+1]-_SE[ie])/_E_interval;
@@ -5188,7 +5223,7 @@ void cmc::fout_betaalpha() {
 	if(system("./smoothdata beta.dat beta_smoothed.dat 10")) {
 		cout<<" now you may check [ beta_smoothed.dat ]. "<<endl;
 	}
-	if(system("gnuplot draw_beta.gpl")) {
+	if(system("gnuplot < draw_beta.gpl")) {
 		cout<<" now you may check [ beta.eps ]. "<<endl;
 	}
 	///////////////////////////////////////////////////////////////////////////
@@ -5196,6 +5231,7 @@ void cmc::fout_betaalpha() {
 /////////////////
 void cmc::calc_betaalpha_muca() { // after ensembler;
 	MPI_Barrier(MPI_COMM_WORLD);
+	////////////////////////////////////
 	calc_entropy_muca();
 	////////////////////////////////////
 	fout_entropy();
@@ -5364,7 +5400,7 @@ void cmc::ensembler() {
 	ensembler_stream<<" emin="<<_E_lowest<<endl;
 	ensembler_stream<<" emax="<<_E_highest<<endl;
 	ensembler_stream.close();
-	if(system("gnuplot draw_prob.gpl")){};
+	if(system("gnuplot < draw_prob.gpl")){};
 	cout<<" u may check file: [ probability.eps ] now."<<endl;
 	delete[] FileName;
 }
@@ -5522,6 +5558,9 @@ inline void cmc::init_statistic() {
 		//getchar();
 	}
 	cout<<" @Proc"<<_PROC_ID<<" Etot="<<tempEtot<<" v.s. CurrentE="<<_ENER_total<<endl;
+	printf("Etot=%20.12f\n",tempEtot);
+	printf("CurrentE=%20.12f\n",_ENER_total);
+	printf("delta_E=%20.12f\n",tempEtot-_ENER_total);
 	if(_FLAG_ener) {
 		if( fabs(tempEtot-_ENER_total)>1e-6 || _ENER_total!=_ENER_total || tempEtot!=tempEtot ) {
 			cout<<" energy wrong..."<<endl;

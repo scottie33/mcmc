@@ -126,7 +126,7 @@ public:
 	int _INDEX_chosen;
 	double _ENER_total;
 	int _NUM_replicas;
-	double* _T_rep_eachrep;      // each replica
+	double* _T_retro_eachrep;      // each replica
 	double* _T_eachrep;          // each replica
 	int*    _Index_T_rep;        // each replica, only on node0, index of which rep the T is in;
 	int*    _Index_rep_T;        // each replica, every node,    index of which T the rep is;
